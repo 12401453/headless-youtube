@@ -1,0 +1,43 @@
+<!DOCTYPE html> 
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+
+<body style="background-color: #071022;">
+  <br>
+
+
+<textarea id="searchbox" form="formid" name="searchbox" placeholder="Search..." style="background: black; color: #cbd9f4; font-family: Bookerly;"></textarea><br><br>
+ 
+
+</body>
+</html>
+<script>
+  const searchBox = document.getElementById("searchbox");
+  searchBox.focus();
+  const sendMessage = (event) => {
+    if(event.key == "Enter") {
+      let send_data = "message="+encodeURIComponent(searchBox.value.trim()); //this has all been URI-encoded already
+      console.log(send_data);
+      const httpRequest = (method, url) => {
+        const xhttp = new XMLHttpRequest();
+        xhttp.open(method, url, true);
+        xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xhttp.responseType = 'text';
+        xhttp.onreadystatechange = () => { 
+          if (xhttp.readyState == 4) {
+            searchBox.value = "";
+          }
+        }; 
+        xhttp.send(send_data);
+      };  
+      httpRequest("POST", "show_text.php");  
+    }
+  }
+  document.getElementById("searchbox").addEventListener('keypress', sendMessage);
+
+</script>
