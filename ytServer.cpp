@@ -9,6 +9,8 @@
 #include <vector>
 #include <cstdlib>
 
+#define HOMEPAGE "/yt_search"
+
 void ytServer::onClientConnected(int clientSocket) {
 
 }
@@ -63,13 +65,21 @@ void ytServer::onMessageReceived(int clientSocket, const char* msg, int length) 
         else if(!strcmp(msg_url, "/add_texts")) page_type = 2;
         else if(!strcmp(msg_url, "/words")) page_type = 3;
 
+        const char* final_msg_url;
+        if(!strcmp(msg_url, "/")) {
+            final_msg_url = HOMEPAGE;
+        }
+        else {
+            final_msg_url = (const char*) msg_url;
+        }
+
         //#include "docRoot.cpp"
    
-        int url_size = strlen("HTML_DOCS") + sizeof(msg_url); //sizeof() can be used for c-strings declared as an array of char's but strlen() must be used for char *pointers
+        int url_size = strlen("HTML_DOCS") + strlen(final_msg_url) + 1; //sizeof() can be used for c-strings declared as an array of char's but strlen() must be used for char *pointers
         char url_c_str[url_size];
     
         strcpy(url_c_str, "HTML_DOCS");
-        strcat(url_c_str, msg_url);
+        strcat(url_c_str, final_msg_url);
 
         bool cookies_present = false;
         if(page_type > 0) cookies_present = readCookie(m_cookies, msg); //want to avoid reading cookies when serving auxilliary files like stylesheets
