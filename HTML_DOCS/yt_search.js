@@ -20,6 +20,7 @@ const sendMessage = (event) => {
       xhttp.onreadystatechange = () => { 
         if (xhttp.readyState == 4) {
           searchBox.value = "";
+          document.getElementById("results_column").innerHTML = "";
           /*const */json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
           const itemSectionRenderer_no = json_results.length - 2;
           const renderers = json_results[itemSectionRenderer_no]["itemSectionRenderer"]["contents"];
@@ -38,9 +39,12 @@ const sendMessage = (event) => {
               
               const channel_name = renderer["videoRenderer"]["longBylineText"]["runs"][0]["text"];
               const viewcount = renderer["videoRenderer"]["shortViewCountText"]["simpleText"];
-              const upload_time = renderer["videoRenderer"]["publishedTimeText"]["simpleText"];
-
-              const video_byline = channel_name + " • " + viewcount + " • " + upload_time;
+              let upload_time = "";
+              if(Object.hasOwn(renderer["videoRenderer"], "publishedTimeText")) {
+                upload_time = renderer["videoRenderer"]["publishedTimeText"]["simpleText"];
+              }
+              let video_byline = channel_name + " • " + viewcount;
+              if(upload_time != "") video_byline += " • " + upload_time;
       
               const deets = [thumbnail_src, runtime, channel_thumbnail_src, video_title, video_byline];
               addResult(deets);
