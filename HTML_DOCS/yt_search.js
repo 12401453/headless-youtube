@@ -28,8 +28,21 @@ const sendMessage = (event) => {
             if(Object.keys(renderer)[0] == "videoRenderer") {
               const thumbnails_arr = renderer["videoRenderer"]["thumbnail"]["thumbnails"];
               const thumbnail_src = thumbnails_arr[thumbnails_arr.length - 1]["url"];;
+              
               const runtime = renderer["videoRenderer"]["lengthText"]["simpleText"];
-              const deets = [thumbnail_src, runtime];
+              
+              const channel_thumbnails_arr = renderer["videoRenderer"]["channelThumbnailSupportedRenderers"]["channelThumbnailWithLinkRenderer"]["thumbnail"]["thumbnails"];
+              const channel_thumbnail_src = channel_thumbnails_arr[channel_thumbnails_arr.length -1]["url"];
+
+              const video_title = renderer["videoRenderer"]["title"]["runs"][0]["text"];
+              
+              const channel_name = renderer["videoRenderer"]["longBylineText"]["runs"][0]["text"];
+              const viewcount = renderer["videoRenderer"]["shortViewCountText"]["simpleText"];
+              const upload_time = renderer["videoRenderer"]["publishedTimeText"]["simpleText"];
+
+              const video_byline = channel_name + " • " + viewcount + " • " + upload_time;
+      
+              const deets = [thumbnail_src, runtime, channel_thumbnail_src, video_title, video_byline];
               addResult(deets);
             }
           }
@@ -48,7 +61,7 @@ const addResult = (deets) => {
   //const thumb_height = result_width * (101/180);
   //const details_height = thumb_height * (121/404);
   const result_height = result_width * (7823/9090);
-  let results_node = document.createRange().createContextualFragment(`<div class="result_block"><div class="thumbnail_square"><img class="thumbnail_img" src="${deets[0]}"><div class="runtime_overlay">${deets[1]}</div></div><div class="details_square"><div class="channel_logo_block"></div><div class="video_details_block"></div></div></div>`);
+  let results_node = document.createRange().createContextualFragment(`<div class="result_block"><div class="thumbnail_square"><img class="thumbnail_img" src="${deets[0]}"><div class="runtime_overlay">${deets[1]}</div></div><div class="details_square"><div class="channel_logo_block"><img class="channel_img" src="${deets[2]}"></div><div class="video_details_block"><div class="video_title">${deets[3]}</div><div class="video_byline">${deets[4]}</div></div></div></div>`);
   //results_node.querySelector(".thumbnail_square").style.height = `${thumb_height}px`;
   //results_node.querySelector(".details_square").style.height = `${details_height}px`;
   results_node.querySelector(".result_block").style.height = `${result_height}px`;
