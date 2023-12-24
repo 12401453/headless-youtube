@@ -73,6 +73,7 @@ body {
     width: 100%;
     max-width: 475px;
     margin-top: 10px;
+    visibility: hidden;
 }
 .result_block {
     display: flex;
@@ -111,6 +112,9 @@ body {
     color: white;
     font-size: 12px;
     font-family: Roboto, Arial, sans-serif;
+}
+.runtime_overlay[data-livestream="1"] {
+    background-color: rgba(204,0,0,0.9);
 }
 
 

@@ -186,7 +186,7 @@ int ytServer::c_strFind(const char* haystack, const char* needle) {
     int needle_length = strlen(needle);
     int haystack_length = strlen(haystack);
     if(haystack_length < needle_length) return -1;
-    char needle_buf[needle_length + 1]; //yes I'm stack-allocating variable-length arrays because g++ lets me and I want the efficiency; it will segfault just the same if I pre-allocate an arbitrary length array which the data is too big for anyway, and I absolutely will not use any of the heap-allocated C++ containers for the essential HTTP message parsing, which needs to be imperceptibly fast
+    char needle_buf[needle_length + 1]; //yes I'm stack-allocating variable-length arrays because g++ lets me and I want the efficiency; it will segfault just the same if I pre-allocate an arbitrary length array which the data is too big for anyway, and I absolutely will not use any of the heap-allocated C++ containers for the essential HTTP message parsing, which needs to be imperceptibly fast.
 
     needle_buf[needle_length] = '\0';
     for(int i = 0; i < haystack_length; i++) {
