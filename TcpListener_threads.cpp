@@ -1,4 +1,5 @@
 #include "TcpListener.h"
+#include <thread>
 
 int TcpListener::init() {
 
@@ -28,6 +29,8 @@ int TcpListener::init() {
 
     FD_SET(m_socket, &m_master);
 
+    printf("m_socket is: %d\n", m_socket);
+
     return 0;
 
 }
@@ -39,49 +42,40 @@ int TcpListener::run() {
     while(running) {
         fd_set master_copy = m_master;
 
-        //    int socketCount = select(0, &master_copy, nullptr, nullptr, nullptr);
-
-        //select will only return when a file descriptor in the fd_set master_copy gets data on it to read (when the a writes to the listening socket)
+        //select will only return when a file descriptor in the fd_set master_copy gets data on it to read (the initial connection will put data to read on the listening-socket, m_socket, but once we call accept() on that and add the new client-socket to our fd_set, the client will write its actual message-data to the new client-socket, and nothing will be left on the listening-socket, so select() on its second go-through the loop will only signal data on the client-socket and will yeet any barren sockets (i.e. the listening-socket m_master) from its fd_set argument)
         if(select(FD_SETSIZE, &master_copy, nullptr, nullptr, nullptr) < 0) {
-            std::cerr << "select() is fucked";
+            std::cerr << "select() is fucked main thread";
+            perror("select() error");
             return -4;
         }
+        //select() modifies the master_copy variable so it only includes those file-descriptors (sockets) which are ready for I/O, in this case reading, which means on the second-pass of this loop the listening-socket is yeeted from master_copy and only the client-socket remains
+
+        printf("%s\n", "select() has returned");
         for(int i = 0; i < FD_SETSIZE; i++) {
             int sock = i;//master_copy.fd_array[i];
 
+            //select() has yeeted any non-readable sockets from master_copy, so once accept() has been called on the listening-socket and the client-socket added to m_master, this FD_ISSET() call only returns true for the client-socket 
             if(FD_ISSET(sock, &master_copy)) {
 
                 //this only gets called if the listening socket is determined to have some data for us to read by select(), which only happens when a client connects to the server on the listening socket, so this only triggers upon new client connections
                 if (sock == m_socket) {
                     std::cout << "sock == listening - Client connected" << std::endl;
+                    
+                    
+                    
                     int client = accept(m_socket, nullptr, nullptr);
-                    FD_SET(client, &m_master);
+                    //FD_SET(client, &m_master);
+                    
+                    //std::thread(onClientConnected, client).detach();
 
-                    onClientConnected(client);
+                    std::thread([this, client]() {
+                        onClientConnected(client);
+                    }).detach();
 
-                }
-
-                //if the socket determined to have data to read in it by select() is not the listening socket then we assume first that it is a client socket and we try to read the bytes on it into the buf array using recv()
-                else {
-                    std::cout << "sock != listening" << std::endl;
-                    char buf[4096];
-                    memset(buf, 0, 4096);
-                    int bytesIn = recv(sock, buf, 4095, 0); //ensure that the last byte of msg is the null-byte
-
-                    //if there were in fact no bytes to be read off the client socket, even though select told us there was, then this is because the client has disconnected from the socket and we need to close it and remove it from fd_set using FD_CLR()
-                    if(bytesIn <= 0) {
-                        std::cout << "bytesIn <= 0\nClient disconnected\n" << std::endl;
-                        onClientDisconnected(sock);
-                        close(sock);
-                        FD_CLR(sock, &m_master);
-                    }
-                    else {
-                        std::cout << "bytesIn > 0" << std::endl;
-                        onMessageReceived(sock, buf, bytesIn);
-                    }
                 }
             }
         }
+        printf("looping through fd_set master_copy is complete\n");
     }
     return 0;
 }
@@ -110,9 +104,48 @@ void TcpListener::onMessageReceived(int clientSocket, const char* msg, int lengt
 }
 
 void TcpListener::onClientConnected(int clientSocket) {
+    printf("Client-socket of number %d connected\n", clientSocket);
+
+    fd_set connection_sockets;
+    FD_ZERO(&connection_sockets); //I don't want this to be listening for new connections, so I am not including the listening-socket in it
+    FD_SET(clientSocket, &connection_sockets);
+
+    while(true) {
+        fd_set connection_sockets_copy = connection_sockets;
+
+        if(select(FD_SETSIZE, &connection_sockets, nullptr, nullptr, nullptr) < 0) {
+            std::cerr << "select() is fucked detached thread";
+            perror("select() error");
+            return;
+        }
+
+        for(int i = 0; i < FD_SETSIZE; i++) {
+            int sock = i;
+            if(FD_ISSET(sock, &connection_sockets_copy)) {
+                char buf[4096];
+                memset(buf, 0, 4096);
+                int bytesIn = recv(sock, buf, 4095, 0); //ensure that the last byte of msg is the null-byte
+
+                if(bytesIn <= 0) {
+                    std::cout << "bytesIn <= 0\nClient disconnected\n\n";
+                    
+                    close(sock);
+                    FD_CLR(sock, &connection_sockets);
+                    onClientDisconnected(sock);
+
+                    return;
+                }
+                else {
+                    std::cout << "bytesIn > 0\n";
+                    onMessageReceived(sock, buf, bytesIn);
+                }
+            }
+
+        }
+    }
 
 }
 
 void TcpListener::onClientDisconnected(int clientSocket) {
-
+    printf("Client-socket of number %d has disconnected\n", clientSocket);
 }

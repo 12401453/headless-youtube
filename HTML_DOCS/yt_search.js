@@ -4,14 +4,6 @@ const getResultWidth = () => {
   return viewport_width > 500 ? max_result_width : viewport_width /** 0.95 */;
 };
 
-let not_found_thumbnail_URL = "";
-fetch("not_found.webp")
-.then((response) => {
-  return response.blob();
-})
-.then((response) => {
-  not_found_thumbnail_URL =URL.createObjectURL(response);
-});
 
 /* delete me */ let json_results = Object.create(null);
 const searchBox = document.getElementById("search_box");

@@ -8,20 +8,22 @@
 #include <sys/stat.h>
 #include <vector>
 #include <cstdlib>
+#include <mutex>
 
 #define HOMEPAGE "/yt_search"
 
+std::mutex mutex;
+/*
 void ytServer::onClientConnected(int clientSocket) {
 
 }
 
 void  ytServer::onClientDisconnected(int clientSocket) { 
     
-}
+} */
 
 void ytServer::onMessageReceived(int clientSocket, const char* msg, int length) {
-
-
+    
     #define GET 3
     #define POST 4
   
@@ -286,7 +288,7 @@ int ytServer::checkHeaderEnd(const char* msg) {
 }
 
 void ytServer::buildPOSTedData(const char* msg, bool headers_present, int length) {
-
+    std::lock_guard<std::mutex> lock(mutex);
     if(headers_present) {
 
         setURL(msg);
@@ -552,7 +554,7 @@ void ytServer::setURL(const char* msg) {
     }
     //url[url_end - url_start] = '\0';
     
-    strcpy(m_url, url); //m_url is max 50 chars but this is allowed because I tightly control what the POST urls are; using std::string would be wasteful
+    strncpy(m_url, url, 50); //m_url is max 50 chars but this is allowed because I tightly control what the POST urls are; using std::string would be wasteful
 }
 
 int ytServer::getPostFields(const char* url) {
