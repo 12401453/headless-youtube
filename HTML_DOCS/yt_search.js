@@ -9,9 +9,13 @@ const getResultWidth = () => {
 const searchBox = document.getElementById("search_box");
 searchBox.focus();
 const sendMessage = (event) => {
-  if(event.key == "Enter") {
+  if(event.key == "Enter" || event.type == 'click') {
     event.preventDefault();
-    let send_data = "message="+encodeURIComponent(searchBox.value.trim()); //this has all been URI-encoded already
+    searchBox.removeEventListener('keypress', sendMessage);
+    searchBox.readOnly = true;
+    const search_query = searchBox.value.trim();
+    if(search_query == "") return;
+    let send_data = "message="+encodeURIComponent(search_query); //this has all been URI-encoded already
     console.log(send_data);
     const httpRequest = (method, url) => {
       const xhttp = new XMLHttpRequest();
@@ -20,7 +24,9 @@ const sendMessage = (event) => {
       xhttp.responseType = 'json';
       xhttp.onreadystatechange = () => { 
         if (xhttp.readyState == 4) {
-          searchBox.value = "";
+          searchBox.addEventListener('keypress', sendMessage);
+          searchBox.readOnly = false;
+          searchBox.select();
           document.getElementById("results_column").innerHTML = "";
           /*const */json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
           const itemSectionRenderer_no = json_results.length - 2;
@@ -81,6 +87,7 @@ const sendMessage = (event) => {
   }
 }
 searchBox.addEventListener('keypress', sendMessage);
+document.getElementById("search_button").addEventListener('click', sendMessage);
 
 const addResult = (deets) => {
   const result_width = getResultWidth();
