@@ -84,7 +84,7 @@ void TcpListener::sendToClient(int clientSocket, const char* msg, int length) {
 
     send(clientSocket, msg, length, 0);
 }
-
+/*
 void TcpListener::broadcastToClients(int sendingClient, const char* msg, int length) {
     for (int i = 0; i < FD_SETSIZE; i++) {
         int outSock = i;//master.fd_array[i];
@@ -97,7 +97,7 @@ void TcpListener::broadcastToClients(int sendingClient, const char* msg, int len
 
     }
 
-}
+} */
 
 void TcpListener::onMessageReceived(int clientSocket, const char* msg, int length) {
 

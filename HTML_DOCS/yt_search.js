@@ -7,14 +7,20 @@ const getResultWidth = () => {
 
 /* delete me */ let json_results = Object.create(null);
 const searchBox = document.getElementById("search_box");
+const loader = document.createElement("div");
+loader.className = "loader";
 searchBox.focus();
 const sendMessage = (event) => {
   if(event.key == "Enter" || event.type == 'click') {
+    const search_query = searchBox.value.trim();
+    if(search_query == "") return;
+    const resultsColumn = document.getElementById("results_column");
+    resultsColumn.style.visibility = "hidden";
+    resultsColumn.before(loader);
+
     event.preventDefault();
     searchBox.removeEventListener('keypress', sendMessage);
     searchBox.readOnly = true;
-    const search_query = searchBox.value.trim();
-    if(search_query == "") return;
     let send_data = "message="+encodeURIComponent(search_query); //this has all been URI-encoded already
     console.log(send_data);
     const httpRequest = (method, url) => {
@@ -27,7 +33,7 @@ const sendMessage = (event) => {
           searchBox.addEventListener('keypress', sendMessage);
           searchBox.readOnly = false;
           searchBox.select();
-          document.getElementById("results_column").innerHTML = "";
+          resultsColumn.innerHTML = "";
           /*const */json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
           const itemSectionRenderer_no = json_results.length - 2;
           const renderers = json_results[itemSectionRenderer_no]["itemSectionRenderer"]["contents"];
@@ -76,13 +82,13 @@ const sendMessage = (event) => {
             
             }
           }
-          document.getElementById("results_column").style.visibility = "visible";
+          loader.remove();
+          resultsColumn.style.visibility = "visible";
 
         }
       }; 
       xhttp.send(send_data);
     };
-    document.getElementById("results_column").style.visibility = "hidden";
     httpRequest("POST", "yt_search.php");  
   }
 }

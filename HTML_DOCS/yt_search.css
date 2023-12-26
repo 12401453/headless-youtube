@@ -170,3 +170,25 @@ body {
 
     word-wrap: break-word;
 }
+
+
+.loader {
+    margin-top: 15px;
+    align-self: center;
+    border: 3px solid #cbd9f487;
+    border-radius: 50%;
+    border-top: 3px solid #071022;
+    border-top: 3px solid #071022;
+    width: 40px;
+    height: 40px;
+    -webkit-animation: spin 1s linear infinite; /* Safari */
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}

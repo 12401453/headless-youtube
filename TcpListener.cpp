@@ -39,16 +39,17 @@ int TcpListener::run() {
     while(running) {
         fd_set master_copy = m_master;
 
-        //    int socketCount = select(0, &master_copy, nullptr, nullptr, nullptr);
-
-        //select will only return when a file descriptor in the fd_set master_copy gets data on it to read (when the a writes to the listening socket)
+        //select will only return when a file descriptor in the fd_set master_copy gets data on it to read (the initial connection will put data to read on the listening-socket, m_socket, but once we call accept() on that and add the new client-socket to our fd_set, the client will write its actual message-data to the new client-socket, and nothing will be left on the listening-socket, so select() on its second go-through the loop will only signal data on the client-socket and will yeet any barren sockets (i.e. the listening-socket m_master) from its fd_set argument)
         if(select(FD_SETSIZE, &master_copy, nullptr, nullptr, nullptr) < 0) {
             std::cerr << "select() is fucked";
             return -4;
         }
+        //select() modifies the master_copy variable so it only includes those file-descriptors (sockets) which are ready for I/O, in this case reading, which means on the second-pass of this loop the listening-socket is yeeted from master_copy and only the client-socket remains
+
         for(int i = 0; i < FD_SETSIZE; i++) {
             int sock = i;//master_copy.fd_array[i];
 
+            //select() has yeeted any non-readable sockets from master_copy, so once accept() has been called on the listening-socket and the client-socket added to m_master, this FD_ISSET() call only returns true for the client-socket 
             if(FD_ISSET(sock, &master_copy)) {
 
                 //this only gets called if the listening socket is determined to have some data for us to read by select(), which only happens when a client connects to the server on the listening socket, so this only triggers upon new client connections
@@ -91,11 +92,12 @@ void TcpListener::sendToClient(int clientSocket, const char* msg, int length) {
     send(clientSocket, msg, length, 0);
 }
 
+/*
 void TcpListener::broadcastToClients(int sendingClient, const char* msg, int length) {
     for (int i = 0; i < FD_SETSIZE; i++) {
         int outSock = i;//master.fd_array[i];
 
-        //the outSock is another connected client socket, so this code is only called if more than one client is connected (if the outSock is a member of the fd_set master). It loops round and sends the incoming data in buf to each outSock it finds so that the message gets to each client, but it has to differentiate between other connected clients and the main listening socket (which listens for new client connections) and the client which is currently writing to the server (stored in sock), which is why we have the second if-statement; it writes the contents of buf to all the sockets in fd_set master EXCEPT the listening socket and the client-socket which wrote the message
+        //the outSock is another connected client socket, so this code is only called if more than one client is connected (if the outSock is a member of the fd_set master). It loops round and sends the incoming data in buf to each outSock it finds so that the message gets to each client, but it has to differentiate between other connected clients and the main listening socket (which listens for new client connections) and the client which is currently writing to the server (stored in sendingClient), which is why we have the second if-statement; it writes the contents of buf to all the sockets in fd_set master EXCEPT the listening socket and the client-socket which wrote the message
 
         if(outSock != m_socket && outSock != sendingClient) {
             sendToClient(outSock, msg, length);
@@ -103,7 +105,7 @@ void TcpListener::broadcastToClients(int sendingClient, const char* msg, int len
 
     }
 
-}
+} */
 
 void TcpListener::onMessageReceived(int clientSocket, const char* msg, int length) {
 

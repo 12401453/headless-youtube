@@ -24,7 +24,7 @@ class TcpListener {
         virtual void onClientDisconnected(int clientSocket);
         virtual void onMessageReceived(int clientSocket, const char* msg, int length);
         void sendToClient(int clientSocket, const char* msg, int length);
-        void broadcastToClients(int sendingClient, const char* msg, int length);
+        //void broadcastToClients(int sendingClient, const char* msg, int length);
 
     private:
         const char*         m_ipAddress;
