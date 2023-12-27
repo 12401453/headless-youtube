@@ -6,7 +6,7 @@ const getResultWidth = () => {
 
 
 /* delete me */ let json_results = Object.create(null);
-const searchBox = document.getElementById("search_box");
+const searchBox = document.getElementById("page1_searchbox");
 const loader = document.createElement("div");
 loader.className = "loader";
 searchBox.focus();
@@ -93,7 +93,7 @@ const sendMessage = (event) => {
   }
 }
 searchBox.addEventListener('keypress', sendMessage);
-document.getElementById("search_button").addEventListener('click', sendMessage);
+document.getElementById("page1_searchbutton").addEventListener('click', sendMessage);
 
 const addResult = (deets) => {
   const result_width = getResultWidth();
@@ -101,7 +101,9 @@ const addResult = (deets) => {
   //const details_height = thumb_height * (121/404);
   const result_height = result_width * (7823/9090);
   const results_node = document.createRange().createContextualFragment(`<div class="result_block"><div class="thumbnail_square"><img class="thumbnail_img" src="${deets[0]}"><div class="runtime_overlay" data-livestream="${deets[1]}">${deets[2]}</div></div><div class="details_square"><div class="channel_logo_block"><img class="channel_img" src="${deets[3]}"></div><div class="video_details_block"><div class="video_title">${deets[4]}</div><div class="video_byline">${deets[5]}</div></div></div></div>`);
-  results_node.querySelector(".result_block").style.height = `${result_height}px`;
+  const result_block = results_node.querySelector(".result_block");
+  result_block.style.height = `${result_height}px`;
+  result_block.addEventListener("click", highlightVid);
   document.getElementById("results_column").append(results_node);
 
 };
@@ -115,6 +117,19 @@ const resizeResults = () => {
 };
 window.addEventListener('resize', resizeResults);
 
+const highlightVid = (event) => {
+  document.getElementById("main_column").style.display = "none";
+  document.getElementById("selected_vid_column").style.display = "flex";
+};
+
+const changeButtonSize = (event) => {
+  if(event.type == 'mousedown' || event.type == "touchstart") event.target.style.transform = "scale(0.9, 0.9)";
+  else event.target.style.transform = "";
+};
+document.querySelectorAll(".button").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
+document.querySelectorAll(".button").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
+document.querySelectorAll(".button").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
+document.querySelectorAll(".button").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
 /*
 const fetchTesting = () => {
   let thumbnail_urls = [];
