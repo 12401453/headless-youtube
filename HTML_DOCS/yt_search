@@ -35,9 +35,9 @@
     </div>      
   </div>
   <div id="vid_controls">
-    <div class="video_options"></div>
+    <div class="video_options"><div class="download_btn" id="download_opus_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (opus)</div></div><div class="download_btn" id="download_video_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">Download video</div></div><div class="download_btn" id="download_mp3_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (mp3)</div></div></div>
     <div id="playback_controls">
-      <div class="button"><img class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img class="playback_btn" src="playback_icons/play.svg"></div><div class="button"><img class="playback_btn" src="playback_icons/fastforward.svg"></div>
+      <div class="button left"><img class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img class="playback_btn" src="playback_icons/play.svg"></div><div class="button right"><img class="playback_btn" src="playback_icons/fastforward.svg"></div>
     </div>
     <div class="video_options"></div>
   </div>

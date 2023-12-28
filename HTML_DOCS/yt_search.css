@@ -9,6 +9,7 @@
 
 html {
     overflow-y: scroll;
+    height: 100%;
 }
 body {
     margin: 0px; /*ensures no bastard chrome automatic 8px margins*/
@@ -202,12 +203,12 @@ body {
     justify-content: flex-start;
     align-items: center;   
 }
-@media (max-aspect-ratio: 1.2) {
+@media (max-aspect-ratio: 1) {
     #selected_vid_column{
         flex-flow: column nowrap;
     }
 }
-@media (min-aspect-ratio: 1.2) {
+@media (min-aspect-ratio: 1) {
     #selected_vid_column{
         flex-flow: row nowrap;
     }
@@ -226,6 +227,8 @@ body {
     box-sizing: border-box;
     display: flex;
     flex-flow: column nowrap;
+    justify-content: center;
+    padding: 10px 10px 10px 0;
 }
 
 #vid_title_selected {
@@ -237,7 +240,6 @@ body {
     text-align: left;
     font-size: 19px;
     line-height: 1.25;
-
     overflow: inherit;
 }
 
@@ -256,7 +258,7 @@ body {
 
 
 #details_square_selected {
-    height: 17%;
+    height: fit-content;
 }
 
 #channel_logo_block_selected {
@@ -312,19 +314,44 @@ body {
 }
 
 .button {
-    padding: 10px;
+    padding: 20px;
 }
-.button:first-of-type {
-    padding: 35px;
+.button.left{
+    padding: 40px;
 }
-.button:last-of-type {
-    padding: 35px;
+.button.right {
+    padding: 40px;
 }
 
 .video_options {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-evenly;
-    overflow-x: auto;
+    overflow: hidden;
+    width: 100%;
     height: 40px;
+}
+
+.download_btn {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: fit-content;
+    width: fit-content;
+    border-radius: 40px;
+    padding: 4px 6px 4px 6px;
+    background-color: rgb(247, 204, 112);
+    box-sizing: border-box;
+    min-width: 94.08px;
+}
+.download_btn_text {
+    height: fit-content;
+    font-size: 10px;
+    padding: 5px 5px 2px 5px;
+    font-family: 'Roboto';
+}
+
+.download_icon {
+    height: 16px;
 }
