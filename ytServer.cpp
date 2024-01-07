@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdlib>
 #include <mutex>
+#include "cJSON.c"
 
 #define HOMEPAGE "/yt_search"
 
@@ -686,6 +687,9 @@ bool ytServer::ytSearch(std::string _POST[1], int clientSocket) {
     int json_end = yt_query.m_get_html.find("};", json_start) + 1; 
 
     std::string yt_json = yt_query.m_get_html.substr(json_start, json_end-json_start);
+
+    //cJSON *yt_json_parsed = cJSON_Parse(yt_json.c_str());
+    //free(yt_json_parsed);
 
     std::ostringstream post_response;
     int content_length = yt_json.size();

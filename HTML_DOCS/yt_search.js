@@ -124,12 +124,14 @@ const highlightVid = (event) => {
 
 const changeButtonSize = (event) => {
   if(event.type == 'mousedown' || event.type == "touchstart") event.target.style.transform = "scale(0.9, 0.9)";
+  else if(event.type == 'mouseout') event.target.style.transform = "";
   else event.target.style.transform = "";
 };
-document.querySelectorAll(".button").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
-document.querySelectorAll(".button").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
-document.querySelectorAll(".button").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
-document.querySelectorAll(".button").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseout', changeButtonSize));
 /*
 const fetchTesting = () => {
   let thumbnail_urls = [];

@@ -293,7 +293,6 @@ body {
     align-items: center;
     height: 100%;
     width: 100%;
-    border: 1px sold green;
     box-sizing: border-box;
     justify-content: center;
 }
@@ -307,6 +306,7 @@ body {
 .playback_btn {
     height: 100%;
     width: 100%;
+    user-select: none;
 }
 
 #selected_thumbnail {
@@ -314,13 +314,13 @@ body {
 }
 
 .button {
-    padding: 20px;
+    padding: 5%;
 }
 .button.left{
-    padding: 40px;
+    padding: 10%;
 }
 .button.right {
-    padding: 40px;
+    padding: 10%;
 }
 
 .video_options {
@@ -336,9 +336,9 @@ body {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-around;
-    align-items: flex-end;
-    height: fit-content;
-    width: fit-content;
+    align-items: center;
+    width: 100px;
+    height: 24px;
     border-radius: 40px;
     padding: 4px 6px 4px 6px;
     background-color: rgb(247, 204, 112);
