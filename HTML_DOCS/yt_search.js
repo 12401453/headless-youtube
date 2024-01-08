@@ -145,7 +145,18 @@ const resizeResults = () => {
     if(landscape && orientation_css.href == portraitURL) orientation_css.href = landscapeURL;
     else if(landscape == false && orientation_css.href == landscapeURL) orientation_css.href = portraitURL;
 
-    console.log(`orientation is landscape: ${landscape}`);
+    const normal_thumb_width = (vp_width / 2) - 10;
+    if(landscape) {
+      const thumbnail_width = document.getElementById("selected_thumbnail_img").getBoundingClientRect().width;
+      if(vp_height / thumbnail_width < 1.05) {
+        document.getElementById("selected_thumbnail_img").style.width = `${vp_height/1.05}px`;
+        console.log(`new thumbnail_img width: ${vp_height/1.05}px`);
+      }
+      else document.getElementById("selected_thumbnail_img").style.width = `${normal_thumb_width}px`;
+    }
+    else {
+      document.getElementById("selected_thumbnail_img").style.width = `100%`;
+    }
   }
 
 };
