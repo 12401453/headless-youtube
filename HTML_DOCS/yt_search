@@ -25,13 +25,13 @@
 </div>
 <div id="selected_vid_column">
   <div id="selected_vid_box">
-    <div id="vid_title_selected" class="video_title">Water Cooling a Laptop for $30 Meghan Trainor - Title</div>
-    <div id="vid_byline_selected"><span dir="auto">787K views</span><span> • </span><span dir="auto">13 hours ago</span></div>
-    <div div id="selected_thumbnail" class="thumbnail_square"><img id="selected_thumbnail_img" class="thumbnail_img" src="https://i.ytimg.com/vi/a6Xn4TR0WDk/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLBB_6wyf9xfVlSWQ5nrZ5JkkHCkaw"></div>
+    <div id="vid_title_selected" class="video_title"></div>
+    <div id="vid_byline_selected"><span dir="auto"></span><span> • </span><span dir="auto"></span></div>
+    <div div id="selected_thumbnail" class="thumbnail_square"><img id="selected_thumbnail_img" class="thumbnail_img" src></div>
     <div id="details_square_selected" class="details_square">
-      <div id="channel_logo_block_selected" class="channel_logo_block"><img class="channel_img" src="https://yt3.ggpht.com/Vy6KL7EM_apxPSxF0pPy5w_c87YDTOlBQo3MADDF0Wl51kwxmt9wmRotnt2xQXwlrcyO0Xe56w=s68-c-k-c0x00ffffff-no-rj"></div>
+      <div id="channel_logo_block_selected" class="channel_logo_block"><img class="channel_img" src></div>
       <div id="selected_details_block">
-        <div id="channel_name_selected">Linus Tech Tips</div>
+        <div id="channel_name_selected"></div>
       </div>
     </div>      
   </div>

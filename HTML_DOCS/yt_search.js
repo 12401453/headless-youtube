@@ -6,6 +6,7 @@ const getResultWidth = () => {
 
 let pageno = 1;
 
+//to get around iOS's lack of support for CSS aspect-ratio media-query:
 let landscapeURL = "";
 fetch("landscape.css")
 .then(response => {
@@ -25,7 +26,8 @@ fetch("portrait.css")
   if(window.visualViewport.height > window.visualViewport.width) document.getElementById("orientation_css").href = portraitURL;
 });
 
-/* delete me */ let json_results = Object.create(null);
+let deets_array = new Array();
+
 const searchBox = document.getElementById("page1_searchbox");
 const loader = document.createElement("div");
 loader.className = "loader";
@@ -43,6 +45,7 @@ const sendMessage = (event) => {
     searchBox.readOnly = true;
     let send_data = "message="+encodeURIComponent(search_query); //this has all been URI-encoded already
     console.log(send_data);
+    deets_array = new Array();
     const httpRequest = (method, url) => {
       const xhttp = new XMLHttpRequest();
       xhttp.open(method, url, true);
@@ -54,10 +57,10 @@ const sendMessage = (event) => {
           searchBox.readOnly = false;
           searchBox.select();
           resultsColumn.innerHTML = "";
-          /*const */json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
+          const json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
           const itemSectionRenderer_no = json_results.length - 2;
           const renderers = json_results[itemSectionRenderer_no]["itemSectionRenderer"]["contents"];
-
+          let count = 0;
           for(const renderer of renderers) {
             if(Object.keys(renderer)[0] == "videoRenderer") {
               const thumbnails_arr = renderer["videoRenderer"]["thumbnail"]["thumbnails"];
@@ -93,12 +96,21 @@ const sendMessage = (event) => {
               if(Object.hasOwn(renderer["videoRenderer"], "publishedTimeText")) {
                 upload_time = renderer["videoRenderer"]["publishedTimeText"]["simpleText"];
               }
-              let video_byline = '<span dir="auto">'+channel_name+'</span><span> • </span><span dir="auto">'+viewcount+'</span>';
-              if(upload_time != "") video_byline+='<span> • </span><span dir="auto">'+upload_time+'</span>';
+              let video_byline = '<span dir="auto">'+channel_name+'</span><span> • </span><span class="viewcount" dir="auto">'+viewcount+'</span>';
+              let selected_byline = '<span class="viewcount" dir="auto">'+viewcount+'</span>';
+              if(upload_time != "") {
+                video_byline+='<span> • </span><span class="upload_time" dir="auto">'+upload_time+'</span>';
+                selected_byline+='<span> • </span><span class="upload_time" dir="auto">'+upload_time+'</span>';
+              }
+              else {
+                selected_byline+='<span> • </span><span class="livestream_uploadtime" style="color: red;">LIVE</span>';
+              }
               
       
-              const deets = [thumbnail_src, livestream, runtime, channel_thumbnail_src, video_title, video_byline];
-              addResult(deets);
+              const deets = [thumbnail_src, livestream, runtime, channel_thumbnail_src, video_title, video_byline, channel_name, selected_byline];
+              deets_array.push(deets);
+              addResult(deets, count);
+              count++;
             
             }
           }
@@ -115,15 +127,16 @@ const sendMessage = (event) => {
 searchBox.addEventListener('keypress', sendMessage);
 document.getElementById("page1_searchbutton").addEventListener('click', sendMessage);
 
-const addResult = (deets) => {
+const addResult = (deets, count) => {
   const result_width = getResultWidth();
   //const thumb_height = result_width * (101/180);
   //const details_height = thumb_height * (121/404);
   const result_height = result_width * (7823/9090);
-  const results_node = document.createRange().createContextualFragment(`<div class="result_block"><div class="thumbnail_square"><img class="thumbnail_img" src="${deets[0]}"><div class="runtime_overlay" data-livestream="${deets[1]}">${deets[2]}</div></div><div class="details_square"><div class="channel_logo_block"><img class="channel_img" src="${deets[3]}"></div><div class="video_details_block"><div class="video_title">${deets[4]}</div><div class="video_byline">${deets[5]}</div></div></div></div>`);
+  const results_node = document.createRange().createContextualFragment(`<div data-count="${count}" class="result_block"><div class="thumbnail_square"><img class="thumbnail_img" src="${deets[0]}"><div class="runtime_overlay" data-livestream="${deets[1]}">${deets[2]}</div></div><div class="details_square"><div class="channel_logo_block"><img class="channel_img" src="${deets[3]}"></div><div class="video_details_block"><div class="video_title">${deets[4]}</div><div class="video_byline">${deets[5]}</div></div></div></div>`);
   const result_block = results_node.querySelector(".result_block");
   result_block.style.height = `${result_height}px`;
-  result_block.addEventListener("click", highlightVid);
+  result_block/*.querySelector(".thumbnail_img")*/.addEventListener("click", highlightVid);
+  //result_block.querySelector(".video_title").addEventListener("click", highlightVid);
   document.getElementById("results_column").append(results_node);
 
 };
@@ -141,7 +154,7 @@ const resizeResults = () => {
     const vp_height = window.visualViewport.height;
     const landscape = vp_width > vp_height ? true : false;
     const orientation_css = document.getElementById("orientation_css");
-    const root_url = "http://"+window.location.hostname+":"+window.location.port+"/";
+    //const root_url = "http://"+window.location.hostname+":"+window.location.port+"/";
     if(landscape && orientation_css.href == portraitURL) orientation_css.href = landscapeURL;
     else if(landscape == false && orientation_css.href == landscapeURL) orientation_css.href = portraitURL;
 
@@ -163,9 +176,20 @@ const resizeResults = () => {
 window.addEventListener('resize', resizeResults);
 
 const highlightVid = (event) => {
-  pageno = 2;
-  document.getElementById("main_column").style.display = "none";
-  document.getElementById("selected_vid_column").style.display = "flex";
+  if(event.target.className == "thumbnail_img" || event.target.className == "video_title") {
+    pageno = 2;
+
+    const selected_result_block_index = Number(event.currentTarget.dataset.count); //event.currentTarget specifies the element the eventListener is attached to, while event.target is the actual (possibly child-) element which the event actually fired on
+    document.getElementById("vid_title_selected").textContent = deets_array[selected_result_block_index][4];
+    document.getElementById("selected_thumbnail_img").src = deets_array[selected_result_block_index][0];
+    document.getElementById("channel_logo_block_selected").querySelector(".channel_img").src = deets_array[selected_result_block_index][3];
+    document.getElementById("vid_byline_selected").innerHTML = deets_array[selected_result_block_index][7];
+    document.getElementById("channel_name_selected").textContent = deets_array[selected_result_block_index][6];
+
+    document.getElementById("main_column").style.display = "none";
+    document.getElementById("selected_vid_column").style.display = "flex";
+    resizeResults();
+  }  
 };
 
 const changeButtonSize = (event) => {

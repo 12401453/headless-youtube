@@ -96,6 +96,7 @@ body {
 .thumbnail_img {
     /*height: 100%;*/
     width: 100%;
+    cursor: pointer;
 }
 
 .runtime_overlay {
@@ -160,7 +161,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 3.5% 8% 0px 0px;
-
+    cursor: pointer;
     word-wrap: break-word;
 }
 .video_byline {
