@@ -1,0 +1,9 @@
+#selected_vid_column{
+    flex-flow: column nowrap;
+}
+#selected_vid_box, #vid_controls {
+    width: 100%;
+}
+#selected_vid_box {
+    padding: 10px 0 10px 0;
+}

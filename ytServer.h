@@ -43,6 +43,7 @@ class ytServer : public TcpListener {
 
         bool showText(std::string _POST[1], int clientSocket);
         bool ytSearch(std::string _POST[1], int clientSocket);
+        bool ytSearchServerSideParsing(std::string _POST[1], int clientSocket);
 
         const char*         m_post_data;
         std::string         m_post_data_incomplete;

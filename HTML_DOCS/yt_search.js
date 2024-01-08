@@ -4,6 +4,26 @@ const getResultWidth = () => {
   return viewport_width > 500 ? max_result_width : viewport_width /** 0.95 */;
 };
 
+let pageno = 1;
+
+let landscapeURL = "";
+fetch("landscape.css")
+.then(response => {
+  return response.blob();
+})
+.then(response => {
+  landscapeURL = URL.createObjectURL(response);
+  if(window.visualViewport.height < window.visualViewport.width) document.getElementById("orientation_css").href = landscapeURL;
+});
+let portraitURL = "";
+fetch("portrait.css")
+.then(response => {
+  return response.blob();
+})
+.then(response => {
+  portraitURL = URL.createObjectURL(response);
+  if(window.visualViewport.height > window.visualViewport.width) document.getElementById("orientation_css").href = portraitURL;
+});
 
 /* delete me */ let json_results = Object.create(null);
 const searchBox = document.getElementById("page1_searchbox");
@@ -108,16 +128,31 @@ const addResult = (deets) => {
 
 };
 const resizeResults = () => {
-  const result_width = getResultWidth();
-  const new_result_height = result_width * (7823/9090);
-  const result_blocks = document.getElementsByClassName("result_block");
-  for(const result_block of result_blocks) {
-    result_block.style.height = `${new_result_height}px`;
+  if(pageno == 1) {
+    const result_width = getResultWidth();
+    const new_result_height = result_width * (7823/9090);
+    const result_blocks = document.getElementsByClassName("result_block");
+    for(const result_block of result_blocks) {
+      result_block.style.height = `${new_result_height}px`;
+    }
   }
+  else if(pageno == 2) {
+    const vp_width = window.visualViewport.width;
+    const vp_height = window.visualViewport.height;
+    const landscape = vp_width > vp_height ? true : false;
+    const orientation_css = document.getElementById("orientation_css");
+    const root_url = "http://"+window.location.hostname+":"+window.location.port+"/";
+    if(landscape && orientation_css.href == portraitURL) orientation_css.href = landscapeURL;
+    else if(landscape == false && orientation_css.href == landscapeURL) orientation_css.href = portraitURL;
+
+    console.log(`orientation is landscape: ${landscape}`);
+  }
+
 };
 window.addEventListener('resize', resizeResults);
 
 const highlightVid = (event) => {
+  pageno = 2;
   document.getElementById("main_column").style.display = "none";
   document.getElementById("selected_vid_column").style.display = "flex";
 };

@@ -5,6 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="yt_search.css" rel="stylesheet" type="text/css">
+  <link id="orientation_css" rel="stylesheet" type = "text/css" href>
 </head>
 
 
@@ -26,7 +27,7 @@
   <div id="selected_vid_box">
     <div id="vid_title_selected" class="video_title">Water Cooling a Laptop for $30 Meghan Trainor - Title</div>
     <div id="vid_byline_selected"><span dir="auto">787K views</span><span> • </span><span dir="auto">13 hours ago</span></div>
-    <div div id="selected_thumbnail" class="thumbnail_square"><img class="thumbnail_img" src="https://i.ytimg.com/vi/a6Xn4TR0WDk/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLBB_6wyf9xfVlSWQ5nrZ5JkkHCkaw"></div>
+    <div div id="selected_thumbnail" class="thumbnail_square"><img id="selected_thumbnail_img" class="thumbnail_img" src="https://i.ytimg.com/vi/a6Xn4TR0WDk/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLBB_6wyf9xfVlSWQ5nrZ5JkkHCkaw"></div>
     <div id="details_square_selected" class="details_square">
       <div id="channel_logo_block_selected" class="channel_logo_block"><img class="channel_img" src="https://yt3.ggpht.com/Vy6KL7EM_apxPSxF0pPy5w_c87YDTOlBQo3MADDF0Wl51kwxmt9wmRotnt2xQXwlrcyO0Xe56w=s68-c-k-c0x00ffffff-no-rj"></div>
       <div id="selected_details_block">
@@ -35,7 +36,7 @@
     </div>      
   </div>
   <div id="vid_controls">
-    <div class="video_options"><div class="download_btn" id="download_opus_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (opus)</div></div><div class="download_btn" id="download_video_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">video (webm)</div></div><div class="download_btn" id="download_mp3_btn"><img class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (mp3)</div></div></div>
+    <div class="video_options"><div class="download_btn" id="download_opus_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (opus)</div></div><div class="download_btn" id="download_video_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">video (webm)</div></div><div class="download_btn" id="download_mp3_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (mp3)</div></div></div>
     <div id="playback_controls">
       <div class="button left"><img draggable="false" class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img draggable="false" class="playback_btn" src="playback_icons/play.svg"></div><div class="button right"><img draggable="false" class="playback_btn" src="playback_icons/fastforward.svg"></div>
     </div>

@@ -1,0 +1,12 @@
+#selected_vid_column{
+    flex-flow: row nowrap;
+}
+#vid_controls {
+    justify-content: center;
+}
+#selected_vid_box, #vid_controls {
+    width: 50%;
+}
+#selected_vid_box {
+    padding: 10px 10px 10px 0;
+}

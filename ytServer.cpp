@@ -9,7 +9,7 @@
 #include <vector>
 #include <cstdlib>
 #include <mutex>
-#include "cJSON.c"
+#include "cJSON.h"
 
 #define HOMEPAGE "/yt_search"
 
@@ -688,8 +688,28 @@ bool ytServer::ytSearch(std::string _POST[1], int clientSocket) {
 
     std::string yt_json = yt_query.m_get_html.substr(json_start, json_end-json_start);
 
-    //cJSON *yt_json_parsed = cJSON_Parse(yt_json.c_str());
-    //free(yt_json_parsed);
+    std::ostringstream post_response;
+    int content_length = yt_json.size();
+    post_response << "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " << content_length << "\r\n\r\n" << yt_json;
+    int length = post_response.str().size() + 1;
+
+    sendToClient(clientSocket, post_response.str().c_str(), length);
+
+    return true;
+}
+
+bool ytServer::ytSearchServerSideParsing(std::string _POST[1], int clientSocket) {
+    std::string search_url = "https://www.youtube.com/results?search_query="+_POST[0];
+    printf("%s\n", search_url.c_str());
+    CurlFetcher yt_query(search_url.c_str()); //the query will have been URIEncoded by JS
+    yt_query.fetch();
+    int json_start = yt_query.m_get_html.find("ytInitialData") + 16;
+    int json_end = yt_query.m_get_html.find("};", json_start) + 1; 
+
+    std::string yt_json = yt_query.m_get_html.substr(json_start, json_end-json_start);
+
+    cJSON *yt_json_parsed = cJSON_Parse(yt_json.c_str());
+    cJSON_Delete(yt_json_parsed);
 
     std::ostringstream post_response;
     int content_length = yt_json.size();
