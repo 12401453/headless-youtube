@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+echo '{ "command": ["keypress", "RIGHT"] }' | socat - $HOME/fifo1

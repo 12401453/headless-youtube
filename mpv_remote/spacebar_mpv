@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+echo '{ "command": ["keypress", "SPACE"] }' | socat - $HOME/fifo1

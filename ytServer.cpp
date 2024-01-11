@@ -9,7 +9,8 @@
 #include <vector>
 #include <cstdlib>
 #include <mutex>
-#include "cJSON.h"
+
+//#include "cJSON.h"
 
 #define HOMEPAGE "/yt_search"
 
@@ -536,6 +537,9 @@ void ytServer::handlePOSTedData(const char* post_data, int clientSocket) {
     else if(!strcmp(m_url, "/curl_lookup.php")) {
         bool php_func_success = curlLookup(post_values, clientSocket);
     }
+    else if(!strcmp(m_url, "/play_vid.php")) {
+        bool php_func_success = playMPV(post_values, clientSocket);
+    }
 
     std::cout << "m_url: " << m_url << std::endl;
     
@@ -562,6 +566,7 @@ int ytServer::getPostFields(const char* url) {
     if(!strcmp(url, "/show_text.php")) return 1;
     else if(!strcmp(url, "/yt_search.php")) return 1;
     else if(!strcmp(url, "/curl_lookup.php")) return 1;
+    else if(!strcmp(url, "/play_vid.php")) return 2;
     else return -1;
 }
 
@@ -708,8 +713,8 @@ bool ytServer::ytSearchServerSideParsing(std::string _POST[1], int clientSocket)
 
     std::string yt_json = yt_query.m_get_html.substr(json_start, json_end-json_start);
 
-    cJSON *yt_json_parsed = cJSON_Parse(yt_json.c_str());
-    cJSON_Delete(yt_json_parsed);
+    //cJSON *yt_json_parsed = cJSON_Parse(yt_json.c_str());
+    //cJSON_Delete(yt_json_parsed);
 
     std::ostringstream post_response;
     int content_length = yt_json.size();
@@ -719,4 +724,47 @@ bool ytServer::ytSearchServerSideParsing(std::string _POST[1], int clientSocket)
     sendToClient(clientSocket, post_response.str().c_str(), length);
 
     return true;
+}
+
+bool ytServer::playMPV(std::string _POST[2], int clientSocket) {
+
+    pid_t pid = fork();
+
+    if(pid == 0) {
+        std::string vid_url = URIDecode(_POST[0]);
+        char* format_arg;
+        if(_POST[1] == "0") {
+            format_arg = (char*)"--ytdl-format=bestvideo[height<=?1080]+bestaudio";
+        }
+        else {
+            format_arg = (char*)"--ytdl-format=ba";
+        }
+        std:: cout << vid_url << std::endl;
+        char* args[6] {(char*)"mpv", (char*)"--no-config", format_arg, (char*)"--no-audio-display", (char*)vid_url.c_str(), nullptr};
+        
+        for(int i = 0; i < 4; i++) {
+            printf("%s\n", args[i]);    
+        
+        }
+
+
+        if(execvp("mpv", args) == -1) perror("execvp error: ");
+        //if(execvp("mpv", nullptr) == -1) perror("execvp error: ");
+
+        return true;
+    }
+
+    else {
+        std::string playback_response = "random text";
+
+        std::ostringstream post_response;
+        int content_length = playback_response.size();
+        post_response << "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " << content_length << "\r\n\r\n" << playback_response;
+        int length = post_response.str().size() + 1;
+
+        sendToClient(clientSocket, post_response.str().c_str(), length);
+
+        return true;
+    }
+
 }

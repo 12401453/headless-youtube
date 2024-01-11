@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+echo '{ "command": ["stop"] }' | socat - $HOME/fifo1

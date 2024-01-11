@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+echo '{ "command": ["playlist-prev"] }' | socat - $HOME/fifo1

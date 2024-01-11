@@ -65,6 +65,7 @@ const sendMessage = (event) => {
             if(Object.keys(renderer)[0] == "videoRenderer") {
               const thumbnails_arr = renderer["videoRenderer"]["thumbnail"]["thumbnails"];
               const thumbnail_src = thumbnails_arr[thumbnails_arr.length - 1]["url"];;
+              const video_id = renderer["videoRenderer"]["videoId"];
               
               let runtime = "";
               let livestream = 0;
@@ -102,12 +103,12 @@ const sendMessage = (event) => {
                 video_byline+='<span> • </span><span class="upload_time" dir="auto">'+upload_time+'</span>';
                 selected_byline+='<span> • </span><span class="upload_time" dir="auto">'+upload_time+'</span>';
               }
-              else {
+              else if(livestream == 1) {
                 selected_byline+='<span> • </span><span class="livestream_uploadtime" style="color: red;">LIVE</span>';
               }
               
       
-              const deets = [thumbnail_src, livestream, runtime, channel_thumbnail_src, video_title, video_byline, channel_name, selected_byline];
+              const deets = [thumbnail_src, livestream, runtime, channel_thumbnail_src, video_title, video_byline, channel_name, selected_byline, video_id];
               deets_array.push(deets);
               addResult(deets, count);
               count++;
@@ -189,6 +190,8 @@ const highlightVid = (event) => {
     document.getElementById("main_column").style.display = "none";
     document.getElementById("selected_vid_column").style.display = "flex";
     resizeResults();
+
+    playVid("https://youtube.com/watch?v="+deets_array[selected_result_block_index][8], false);
   }  
 };
 
@@ -225,3 +228,25 @@ const fetchTesting = () => {
   };
   return thumbnail_urls;
 }; */
+
+
+const playVid = (vid_url, audio_only) => {
+  const httpRequest = (method, url) => {
+    const xhttp = new XMLHttpRequest();
+    let send_data = "vid_url="+encodeURIComponent(vid_url)+"&audio_only="+Number(audio_only); 
+
+    xhttp.open(method, url, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.responseType = 'text';
+    xhttp.onreadystatechange = () => { 
+      if (xhttp.readyState == 4) {
+        console.log(response);
+
+
+
+      }
+    }; 
+    xhttp.send(send_data);
+  };
+  httpRequest("POST", "play_vid.php");  
+};
