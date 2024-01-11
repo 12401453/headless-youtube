@@ -8,7 +8,7 @@
 
 class ytServer : public TcpListener {
     public:
-        ytServer(const char *ipAddress, int port, bool show_output) : TcpListener(ipAddress, port), m_DB_path{"Kazakh.db"}, m_show_output{show_output} {
+        ytServer(const char *ipAddress, int port, bool show_output) : TcpListener(ipAddress, port), m_DB_path{"Kazakh.db"}, m_show_output{show_output}, m_MPV_running{false} {
             if(!m_show_output) std::cout.setstate(std::ios_base::failbit);           
         }
 
@@ -46,6 +46,11 @@ class ytServer : public TcpListener {
         bool ytSearchServerSideParsing(std::string _POST[1], int clientSocket);
 
         bool playMPV(std::string _POST[2], int clientSocket);
+        bool playMPV_stdSystem(std::string _POST[2], int clientSocket);
+
+        void startMPV(const std::string& command);
+        bool controlMPV(std::string _POST[1], int clientSocket);
+        bool unsafeURL(const std::string& arg);
 
         const char*         m_post_data;
         std::string         m_post_data_incomplete;
@@ -56,5 +61,7 @@ class ytServer : public TcpListener {
         const char*         m_DB_path;
         std::string         m_cookies[3] {"1", "1", "1"};
         bool                m_show_output;
+
+        bool m_MPV_running;
 
 };

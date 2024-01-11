@@ -38,9 +38,10 @@
   <div id="vid_controls">
     <div class="video_options"><div class="download_btn" id="download_opus_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (opus)</div></div><div class="download_btn" id="download_video_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">video (webm)</div></div><div class="download_btn" id="download_mp3_btn"><img draggable="false" class="download_icon" src="playback_icons/download.svg"><div class="download_btn_text">audio (mp3)</div></div></div>
     <div id="playback_controls">
-      <div class="button left"><img draggable="false" class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img draggable="false" class="playback_btn" src="playback_icons/play.svg"></div><div class="button right"><img draggable="false" class="playback_btn" src="playback_icons/fastforward.svg"></div>
+      <div class="button left"><img id="rw_btn" draggable="false" class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img id="pause_btn" draggable="false" class="playback_btn" src="playback_icons/pause.svg"></div><div class="button right"><img id="ff_btn" draggable="false" class="playback_btn" src="playback_icons/fastforward.svg"></div>
     </div>
-    <div class="video_options"></div>
+    <div class="video_options">
+    </div>
   </div>
 </div>
  

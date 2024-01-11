@@ -9,6 +9,9 @@
 #include <vector>
 #include <cstdlib>
 #include <mutex>
+#include <thread>
+#include <regex>
+#include <filesystem>
 
 //#include "cJSON.h"
 
@@ -538,7 +541,10 @@ void ytServer::handlePOSTedData(const char* post_data, int clientSocket) {
         bool php_func_success = curlLookup(post_values, clientSocket);
     }
     else if(!strcmp(m_url, "/play_vid.php")) {
-        bool php_func_success = playMPV(post_values, clientSocket);
+        bool php_func_success = playMPV_stdSystem(post_values, clientSocket);
+    }
+    else if(!strcmp(m_url, "/control_mpv.php")) {
+        bool php_func_success = controlMPV(post_values, clientSocket);
     }
 
     std::cout << "m_url: " << m_url << std::endl;
@@ -567,6 +573,7 @@ int ytServer::getPostFields(const char* url) {
     else if(!strcmp(url, "/yt_search.php")) return 1;
     else if(!strcmp(url, "/curl_lookup.php")) return 1;
     else if(!strcmp(url, "/play_vid.php")) return 2;
+    else if(!strcmp(url, "/control_mpv.php")) return 1;
     else return -1;
 }
 
@@ -739,7 +746,7 @@ bool ytServer::playMPV(std::string _POST[2], int clientSocket) {
         else {
             format_arg = (char*)"--ytdl-format=ba";
         }
-        std:: cout << vid_url << std::endl;
+        std::cout << vid_url << std::endl;
         char* args[6] {(char*)"mpv", (char*)"--no-config", format_arg, (char*)"--no-audio-display", (char*)vid_url.c_str(), nullptr};
         
         for(int i = 0; i < 4; i++) {
@@ -767,4 +774,132 @@ bool ytServer::playMPV(std::string _POST[2], int clientSocket) {
         return true;
     }
 
+}
+
+bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
+
+    if(m_MPV_running) {
+        std::string playback_response = "a video is already playing";
+        std::ostringstream post_response;
+        int content_length = playback_response.size();
+        post_response << "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " << content_length << "\r\n\r\n" << playback_response;
+        int length = post_response.str().size() + 1;
+
+        sendToClient(clientSocket, post_response.str().c_str(), length);
+        std::cout << "a video is already playing, playback was not initiated\n";
+        return false;
+    }
+
+    std::string vid_url = URIDecode(_POST[0]);
+    if(unsafeURL(vid_url)) {
+        
+        std::string post_response = "HTTP/1.1 403 Forbidden\r\n\r\n";
+        int length = post_response.size() + 1;
+
+        sendToClient(clientSocket, post_response.c_str(), length);
+        std::cout << "invalid youtube-url POSTed\n";
+        return false;
+    }
+
+    std::string format_arg;
+    if(_POST[1] == "0") {
+        format_arg = "--ytdl-format=\"bestvideo[height<=?1080]+bestaudio\"";
+    }
+    else {
+        format_arg = "--ytdl-format=ba";
+    }
+    std::string command = "mpv --no-config "+format_arg+" --no-audio-display --input-ipc-server=mpv_fifo "+vid_url;
+    std::cout << command << std::endl;
+
+    std::thread playbackThread(&ytServer::startMPV, this, command);
+    m_MPV_running = true;
+
+    std::string playback_response = "playback started";
+
+    std::ostringstream post_response;
+    int content_length = playback_response.size();
+    post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << playback_response;
+    int length = post_response.str().size() + 1;
+
+    sendToClient(clientSocket, post_response.str().c_str(), length);
+
+    std::cout << "MPV is currently running in another thread...\n";
+    playbackThread.join(); //blocks execution until playbackThread has finished
+    std::cout << "MPV has finished execution\n";
+
+    return true;
+}
+
+void ytServer::startMPV(const std::string& command) {
+
+    mkfifo("mpv_fifo", S_IRWXU);
+
+    std::system(command.c_str());
+    m_MPV_running = false;
+    std::remove("mpv_fifo");
+}
+
+bool ytServer::unsafeURL(const std::string& arg) {
+
+    if(arg.find("https://youtube.com/watch?v=") != 0) return true;
+    
+    else {
+        std::regex ytID_regex("[A-Za-z0-9_-]+");
+        return !std::regex_match(arg.substr(28, arg.length() - 28), ytID_regex);
+    }
+}
+
+bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
+    
+    if(m_MPV_running == false) {
+        std::cout << "control input ignored because no video is currently playing\n";
+        sendToClient(clientSocket, "HTTP/1.1 204 No Content\r\n\r\n", 28);
+        return false;
+    }
+
+    int control_code = std::stoi(_POST[0]);
+    std::string control_response = "";
+
+    std::string current_path = std::filesystem::current_path();
+
+    /*std::ofstream mpvFifo;
+
+    mpvFifo.open("mpv_fifo", std::ios_base::trunc);
+
+    if(mpvFifo.good()) { */
+    std::string fifo_write_command = "";
+
+        switch(control_code) {
+            case 1:
+                control_response = "pause button pressed";
+                //mpvFifo << "{ \"command\": [\"keypress\", \"SPACE\"] }";
+                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"SPACE\"] }\' | socat - "+current_path+"/mpv_fifo";
+                std::system(fifo_write_command.c_str());
+                break;
+            case 2:
+                control_response = "rewind button pressed";
+                //mpvFifo << "{ \"command\": [\"keypress\", \"LEFT\"] }";
+                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"LEFT\"] }\' | socat - "+current_path+"/mpv_fifo";
+                std::system(fifo_write_command.c_str());
+                break;
+            case 3:
+                control_response = "fast-forward button pressed";
+                //mpvFifo << "{ \"command\": [\"keypress\", \"RIGHT\"] }";
+                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"RIGHT\"] }\' | socat - "+current_path+"/mpv_fifo";
+                std::system(fifo_write_command.c_str());
+                break;
+        }
+      /*  mpvFifo.close();
+    }
+    else {
+        control_response = "problem opening the control-pipe, nothing was done";
+    } */
+
+    std::ostringstream post_response;
+    int content_length = control_response.size();
+    post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << control_response;
+    int length = post_response.str().size() + 1;
+
+    sendToClient(clientSocket, post_response.str().c_str(), length);
+    return true;
 }

@@ -240,13 +240,46 @@ const playVid = (vid_url, audio_only) => {
     xhttp.responseType = 'text';
     xhttp.onreadystatechange = () => { 
       if (xhttp.readyState == 4) {
-        console.log(response);
-
-
-
+        console.log(xhttp.response);
       }
     }; 
     xhttp.send(send_data);
   };
   httpRequest("POST", "play_vid.php");  
 };
+
+const pause_play_urls = ["playback_icons/play.svg", "playback_icons/pause.svg"]
+let play_btn_switch_count = 1;
+
+const controlMPV = (event) => {
+  if(event.target.className != "playback_btn") return;
+
+  let control_code = 0;
+  if(event.target.id == "pause_btn") control_code = 1;
+  else if(event.target.id == "rw_btn") control_code = 2;
+  else if(event.target.id == "ff_btn") control_code = 3;
+
+  const httpRequest = (method, url) => {
+    const xhttp = new XMLHttpRequest();
+    let send_data = "control_code="+control_code; 
+
+    xhttp.open(method, url, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.responseType = 'text';
+    xhttp.onreadystatechange = () => { 
+      if (xhttp.readyState == 4) {
+        console.log(xhttp.response);
+        if(xhttp.response.trim() == "pause button pressed") {
+          play_btn_switch_count++;
+          event.target.src = pause_play_urls[play_btn_switch_count % 2];
+        }
+      }
+    }; 
+    xhttp.send(send_data);
+  };
+  httpRequest("POST", "control_mpv.php");  
+};
+
+document.querySelectorAll(".playback_btn").forEach(btn => {
+  btn.addEventListener('click', controlMPV);
+})
