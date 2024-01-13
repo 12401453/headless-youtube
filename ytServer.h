@@ -5,6 +5,7 @@
 #include <unicode/regex.h>
 #include <unicode/brkiter.h>
 #include "CurlFetcher.cpp"
+#include <sys/un.h>
 
 class ytServer : public TcpListener {
     public:
@@ -52,6 +53,8 @@ class ytServer : public TcpListener {
         bool controlMPV(std::string _POST[1], int clientSocket);
         bool unsafeURL(const std::string& arg);
 
+        bool getCurrentTimePos(std::string _POST[1], int clientSocket);
+
         const char*         m_post_data;
         std::string         m_post_data_incomplete;
         int                 m_total_post_bytes;
@@ -63,5 +66,8 @@ class ytServer : public TcpListener {
         bool                m_show_output;
 
         bool m_MPV_running;
+        int m_ipc_socket;
+        int m_client_socket;
+        struct sockaddr_un m_unix_sock_address;
 
 };

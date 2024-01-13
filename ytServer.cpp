@@ -1,5 +1,5 @@
 //compile with 
-//    g++ CurlFetcher.cpp TcpListener.cpp ytServer.cpp main.cpp -lcurl -o ytserv
+//    g++ CurlFetcher.cpp TcpListener_threads.cpp ytServer.cpp main.cpp -lcurl -o ytserv
 //run with
 //    ./ytserv <portnumber> [silent]
 #include <sstream>
@@ -12,6 +12,7 @@
 #include <thread>
 #include <regex>
 #include <filesystem>
+#include <fcntl.h>
 
 //#include "cJSON.h"
 
@@ -791,8 +792,8 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
     }
 
     std::string vid_url = URIDecode(_POST[0]);
+    
     if(unsafeURL(vid_url)) {
-        
         std::string post_response = "HTTP/1.1 403 Forbidden\r\n\r\n";
         int length = post_response.size() + 1;
 
@@ -808,11 +809,12 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
     else {
         format_arg = "--ytdl-format=ba";
     }
-    std::string command = "mpv --no-config "+format_arg+" --no-audio-display --input-ipc-server=mpv_fifo "+vid_url;
+    std::string command = "mpv --no-config "+format_arg+" --no-audio-display --input-ipc-server=mpv_socket "+vid_url;
     std::cout << command << std::endl;
-
-    std::thread playbackThread(&ytServer::startMPV, this, command);
+    
     m_MPV_running = true;
+    std::thread playbackThread(&ytServer::startMPV, this, command);
+    
 
     std::string playback_response = "playback started";
 
@@ -831,12 +833,20 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
 }
 
 void ytServer::startMPV(const std::string& command) {
+     
+    memset(&m_unix_sock_address, '\0', sizeof(sockaddr_un));
+    m_unix_sock_address.sun_family = AF_UNIX;
+    strcpy(m_unix_sock_address.sun_path, "mpv_socket");
 
-    mkfifo("mpv_fifo", S_IRWXU);
+    m_ipc_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(m_ipc_socket == -1) perror("socket() error: ");
 
+    int bind_return = bind(m_ipc_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address));
+    if(bind_return == -1) perror("bind() error: ");
+     
     std::system(command.c_str());
+    unlink("mpv_socket");
     m_MPV_running = false;
-    std::remove("mpv_fifo");
 }
 
 bool ytServer::unsafeURL(const std::string& arg) {
@@ -860,40 +870,39 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
     int control_code = std::stoi(_POST[0]);
     std::string control_response = "";
 
-    std::string current_path = std::filesystem::current_path();
+    char mpv_command[100];
+    char rd_buf[128];
+    memset(rd_buf, '\0', 128);
+    memset(mpv_command, '\0', 100); 
 
-    /*std::ofstream mpvFifo;
+    m_client_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    printf("client socket is: %d\n", m_client_socket);
 
-    mpvFifo.open("mpv_fifo", std::ios_base::trunc);
-
-    if(mpvFifo.good()) { */
-    std::string fifo_write_command = "";
+    if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) == -1) perror("connect() error: ");
 
         switch(control_code) {
             case 1:
                 control_response = "pause button pressed";
-                //mpvFifo << "{ \"command\": [\"keypress\", \"SPACE\"] }";
-                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"SPACE\"] }\' | socat - "+current_path+"/mpv_fifo";
-                std::system(fifo_write_command.c_str());
+                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"SPACE\"] }\n", 100);
+                if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: "); //if you include the null-byte in the command then mpv thinks the message is too long since it only reads up to the '\n', and thus it thinks the command has one extra superfluous byte in it which triggers the "ignoring unterminated command" message
+                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: "); //if I don't receive what mpv writes back to me then it thinks there is an error when I close the socket; it doesn't actually affect anything and tbh I think calling recv() unnecessarily is bloat
+                //printf("%s\n", rd_buf);
                 break;
             case 2:
                 control_response = "rewind button pressed";
-                //mpvFifo << "{ \"command\": [\"keypress\", \"LEFT\"] }";
-                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"LEFT\"] }\' | socat - "+current_path+"/mpv_fifo";
-                std::system(fifo_write_command.c_str());
+                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"LEFT\"] }\n", 100);
+                if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: ");
+                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+                //printf("%s\n", rd_buf);
                 break;
             case 3:
                 control_response = "fast-forward button pressed";
-                //mpvFifo << "{ \"command\": [\"keypress\", \"RIGHT\"] }";
-                fifo_write_command = "echo \'{ \"command\": [\"keypress\", \"RIGHT\"] }\' | socat - "+current_path+"/mpv_fifo";
-                std::system(fifo_write_command.c_str());
+                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"RIGHT\"] }\n", 100);
+                if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: ");
+                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+                //printf("%s\n", rd_buf);
                 break;
         }
-      /*  mpvFifo.close();
-    }
-    else {
-        control_response = "problem opening the control-pipe, nothing was done";
-    } */
 
     std::ostringstream post_response;
     int content_length = control_response.size();
@@ -901,5 +910,26 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
     int length = post_response.str().size() + 1;
 
     sendToClient(clientSocket, post_response.str().c_str(), length);
+    if(close(m_client_socket) == -1) perror("close() error: ");
+    return true;
+}
+
+bool ytServer::getCurrentTimePos(std::string _POST[1], int clientSocket) {
+    char mpv_command[100];
+    char rd_buf[128];
+    memset(rd_buf, '\0', 128);
+    memset(mpv_command, '\0', 100); 
+
+    m_client_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) == -1) perror("connect() error: ");
+    
+    strncpy(mpv_command, "{ \"command\": [\"get_property\", \"time-pos\"] }\n", 100);
+    if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: ");
+    if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+
+    std::string current_time_json(rd_buf);
+    //unfinished
+
     return true;
 }

@@ -1,5 +1,5 @@
 //compile with 
-//    g++ CurlFetcher.cpp TcpListener.cpp ytServer.cpp main.cpp -lcurl -o ytserv
+//    g++ CurlFetcher.cpp TcpListener_threads.cpp ytServer.cpp main.cpp -lcurl -o ytserv
 //run with
 //    ./ytserv <portnumber> [silent]
 #include "ytServer.h"
