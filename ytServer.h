@@ -1,16 +1,27 @@
 #include "TcpListener.h"
 #include <fstream>
-#include <sqlite3.h>
-#include <unicode/unistr.h>
-#include <unicode/regex.h>
-#include <unicode/brkiter.h>
 #include "CurlFetcher.cpp"
 #include <sys/un.h>
 
+struct app_state {
+    bool mpv_running;
+    bool paused;
+    short int pageno;
+    double seek_percentage;
+    std::string search_query;
+    std::string js_deets_array;
+
+};
+
 class ytServer : public TcpListener {
     public:
-        ytServer(const char *ipAddress, int port, bool show_output) : TcpListener(ipAddress, port), m_DB_path{"Kazakh.db"}, m_show_output{show_output}, m_MPV_running{false} {
-            if(!m_show_output) std::cout.setstate(std::ios_base::failbit);           
+        ytServer(const char *ipAddress, int port, bool show_output) : TcpListener(ipAddress, port), m_show_output{show_output}/*, m_MPV_running{false}*/ {
+            if(!m_show_output) std::cout.setstate(std::ios_base::failbit);
+            memset(&m_app_state, '\0', sizeof(app_state));
+            m_app_state.mpv_running = false;
+            m_app_state.paused = false;
+            m_app_state.pageno = 1;
+            m_app_state.seek_percentage = 0.0;        
         }
 
     protected:
@@ -61,13 +72,14 @@ class ytServer : public TcpListener {
         int                 m_bytes_handled;
         bool                m_POST_continue;
         char                m_url[50]; //only applies to POST urls; you can crash the server by sending it a POST request with a >50 char url but not by having long-named GETted resource amongst the HTML_DOCS
-        const char*         m_DB_path;
         std::string         m_cookies[3] {"1", "1", "1"};
         bool                m_show_output;
 
-        bool m_MPV_running;
         int m_ipc_socket;
         int m_client_socket;
-        struct sockaddr_un m_unix_sock_address;
+        sockaddr_un m_unix_sock_address;
+        app_state m_app_state;
+
+
 
 };

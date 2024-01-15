@@ -159,18 +159,25 @@ const resizeResults = () => {
     if(landscape && orientation_css.href == portraitURL) orientation_css.href = landscapeURL;
     else if(landscape == false && orientation_css.href == landscapeURL) orientation_css.href = portraitURL;
 
+    let new_thumb_width = 0;
     const normal_thumb_width = (vp_width / 2) - 10;
     if(landscape) {
       const thumbnail_width = document.getElementById("selected_thumbnail_img").getBoundingClientRect().width;
       if(vp_height / thumbnail_width < 1.05) {
-        document.getElementById("selected_thumbnail_img").style.width = `${vp_height/1.05}px`;
-        console.log(`new thumbnail_img width: ${vp_height/1.05}px`);
+        new_thumb_width = vp_height/1.05;
+        document.getElementById("selected_thumbnail_img").style.width = `${new_thumb_width}px`;
+        console.log(`new thumbnail_img width: ${new_thumb_width}px`);
       }
-      else document.getElementById("selected_thumbnail_img").style.width = `${normal_thumb_width}px`;
+      else {
+        new_thumb_width = normal_thumb_width;
+        document.getElementById("selected_thumbnail_img").style.width = `${normal_thumb_width}px`;
+      }
     }
     else {
       document.getElementById("selected_thumbnail_img").style.width = `100%`;
+      new_thumb_width = document.getElementById("selected_thumbnail_img").getBoundingClientRect().width;
     }
+    document.getElementById("time_pos_overlay").style.width = `${current_seek_percent*new_thumb_width}px`;
   }
 
 };
@@ -191,7 +198,7 @@ const highlightVid = (event) => {
     document.getElementById("selected_vid_column").style.display = "flex";
     resizeResults();
 
-    playVid("https://youtube.com/watch?v="+deets_array[selected_result_block_index][8], false);
+    playVid("https://youtube.com/watch?v="+deets_array[selected_result_block_index][8], true);
   }  
 };
 
@@ -283,3 +290,44 @@ const controlMPV = (event) => {
 document.querySelectorAll(".playback_btn").forEach(btn => {
   btn.addEventListener('click', controlMPV);
 })
+
+let current_seek_percent = 0;
+
+const seekTime = (event) => {
+  if(event.target.parentElement.id != "selected_thumbnail") return;
+
+  const pointer_left_offset = event.clientX;
+  const thumbnail_width = document.getElementById("selected_thumbnail_img").getBoundingClientRect().width;
+
+  const seek_percent = pointer_left_offset/thumbnail_width;
+  console.log(seek_percent);
+  const send_data = "seek_percent="+seek_percent;
+  console.log(send_data);
+  current_seek_percent = seek_percent;
+  document.getElementById("time_pos_overlay").style.width = `${current_seek_percent*thumbnail_width}px`;
+}
+
+document.getElementById("selected_thumbnail").addEventListener('click', seekTime);
+
+
+function startProgressBar(vid_length) {
+  const overlay = document.getElementById("time_pos_overlay");
+  let current_width_percent = 0;
+  overlay.style.width = `${current_width_percent}%`;
+  let seconds_elapsed = 0;
+
+  const moveProgressBar = () => {
+
+    current_width_percent+=(100/vid_length);
+    
+    let x = 0;
+    overlay.style.width = `${current_width_percent}%`;
+    console.log(`Current percentage is ${current_width_percent}%`);
+        
+    seconds_elapsed++;
+    if(seconds_elapsed == vid_length) return;
+    setTimeout(moveProgressBar, 1000);
+      
+  }
+  moveProgressBar();
+}

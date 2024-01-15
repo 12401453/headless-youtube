@@ -97,6 +97,7 @@ body {
     /*height: 100%;*/
     width: 100%;
     cursor: pointer;
+    display: block; /*<img> is by default display: inline so its parent-element's height doesn't adjust to its height */
 }
 
 .runtime_overlay {
@@ -320,6 +321,7 @@ body {
 
 #selected_thumbnail {
     height: auto;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .button {
@@ -364,4 +366,17 @@ body {
 
 .download_icon {
     height: 16px;
+}
+
+#time_pos_overlay {
+    position: absolute;
+    height: 100%;
+    bottom: 0;
+    background-color: #0000007a;
+    border-right: 1px solid darkred;
+    box-sizing: border-box;
+    width: 0%;
+    -webkit-tap-highlight-color: transparent;
+
+    transition: width 1s linear;
 }

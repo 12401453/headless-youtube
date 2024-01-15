@@ -779,7 +779,7 @@ bool ytServer::playMPV(std::string _POST[2], int clientSocket) {
 
 bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
 
-    if(m_MPV_running) {
+    if(m_app_state.mpv_running) {
         std::string playback_response = "a video is already playing";
         std::ostringstream post_response;
         int content_length = playback_response.size();
@@ -812,7 +812,7 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
     std::string command = "mpv --no-config "+format_arg+" --no-audio-display --input-ipc-server=mpv_socket "+vid_url;
     std::cout << command << std::endl;
     
-    m_MPV_running = true;
+    m_app_state.mpv_running = true;
     std::thread playbackThread(&ytServer::startMPV, this, command);
     
 
@@ -846,7 +846,9 @@ void ytServer::startMPV(const std::string& command) {
      
     std::system(command.c_str());
     unlink("mpv_socket");
-    m_MPV_running = false;
+    close(m_client_socket);
+    close(m_ipc_socket);
+    m_app_state.mpv_running = false;
 }
 
 bool ytServer::unsafeURL(const std::string& arg) {
@@ -861,7 +863,7 @@ bool ytServer::unsafeURL(const std::string& arg) {
 
 bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
     
-    if(m_MPV_running == false) {
+    if(m_app_state.mpv_running == false) {
         std::cout << "control input ignored because no video is currently playing\n";
         sendToClient(clientSocket, "HTTP/1.1 204 No Content\r\n\r\n", 28);
         return false;
@@ -886,7 +888,7 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
                 strncpy(mpv_command, "{ \"command\": [\"keypress\", \"SPACE\"] }\n", 100);
                 if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: "); //if you include the null-byte in the command then mpv thinks the message is too long since it only reads up to the '\n', and thus it thinks the command has one extra superfluous byte in it which triggers the "ignoring unterminated command" message
                 if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: "); //if I don't receive what mpv writes back to me then it thinks there is an error when I close the socket; it doesn't actually affect anything and tbh I think calling recv() unnecessarily is bloat
-                //printf("%s\n", rd_buf);
+                printf("%s\n", rd_buf);
                 break;
             case 2:
                 control_response = "rewind button pressed";

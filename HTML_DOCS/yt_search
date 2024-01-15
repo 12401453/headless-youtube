@@ -27,7 +27,7 @@
   <div id="selected_vid_box">
     <div id="vid_title_selected" class="video_title"></div>
     <div id="vid_byline_selected"><span dir="auto"></span><span> • </span><span dir="auto"></span></div>
-    <div div id="selected_thumbnail" class="thumbnail_square"><img id="selected_thumbnail_img" class="thumbnail_img" src></div>
+    <div div id="selected_thumbnail" class="thumbnail_square"><img id="selected_thumbnail_img" class="thumbnail_img" draggable="false" src><div id="time_pos_overlay" class="thumbnail_img"></div></div>
     <div id="details_square_selected" class="details_square">
       <div id="channel_logo_block_selected" class="channel_logo_block"><img class="channel_img" src></div>
       <div id="selected_details_block">
