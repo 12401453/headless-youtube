@@ -885,9 +885,12 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
         switch(control_code) {
             case 1:
                 control_response = "pause button pressed";
-                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"SPACE\"] }\n", 100);
-                if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: "); //if you include the null-byte in the command then mpv thinks the message is too long since it only reads up to the '\n', and thus it thinks the command has one extra superfluous byte in it which triggers the "ignoring unterminated command" message
-                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: "); //if I don't receive what mpv writes back to me then it thinks there is an error when I close the socket; it doesn't actually affect anything and tbh I think calling recv() unnecessarily is bloat
+                //strncpy(mpv_command, "{ \"command\": [\"keypress\", \"SPACE\"] }\n", 100);
+                //if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: "); 
+                //if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+                runMPVCommand("{ \"command\": [\"keypress\", \"SPACE\"] }\n", rd_buf);
+                memset(rd_buf, '\0', 128);
+                runMPVCommand("{ \"command\": [\"get_property\", \"time-pos\"] }\n", rd_buf);
                 printf("%s\n", rd_buf);
                 break;
             case 2:
@@ -934,4 +937,11 @@ bool ytServer::getCurrentTimePos(std::string _POST[1], int clientSocket) {
     //unfinished
 
     return true;
+}
+
+void ytServer::runMPVCommand(const char* command, char* response_buf) {
+    
+    if(send(m_client_socket, command, strlen(command), 0) == -1) perror("send() error: "); //if you include the null-byte in the command then mpv thinks the message is too long since it only reads up to the '\n', and thus it thinks the command has one extra superfluous byte in it which triggers the "ignoring unterminated command" message
+    if(recv(m_client_socket, response_buf, 128, 0) == -1) perror("recv() error: "); //if I don't receive what mpv writes back to me then it thinks there is an error when I close the socket; it doesn't actually affect anything and tbh I think calling recv() unnecessarily is bloat
+
 }

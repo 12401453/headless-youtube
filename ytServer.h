@@ -66,6 +66,8 @@ class ytServer : public TcpListener {
 
         bool getCurrentTimePos(std::string _POST[1], int clientSocket);
 
+        void runMPVCommand(const char* command, char* response_buf);
+
         const char*         m_post_data;
         std::string         m_post_data_incomplete;
         int                 m_total_post_bytes;

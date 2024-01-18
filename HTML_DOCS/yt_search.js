@@ -4,7 +4,14 @@ const getResultWidth = () => {
   return viewport_width > 500 ? max_result_width : viewport_width /** 0.95 */;
 };
 
-let pageno = 1;
+let app_state = {
+  pageno: 1,
+  deets_array: [],
+  current_seek_percent: 0,
+  search_query: "",
+  mpv_running: false,
+  thumbnail_width: 0
+};
 
 //to get around iOS's lack of support for CSS aspect-ratio media-query:
 let landscapeURL = "";
@@ -26,8 +33,6 @@ fetch("portrait.css")
   if(window.visualViewport.height > window.visualViewport.width) document.getElementById("orientation_css").href = portraitURL;
 });
 
-let deets_array = new Array();
-
 const searchBox = document.getElementById("page1_searchbox");
 const loader = document.createElement("div");
 loader.className = "loader";
@@ -43,9 +48,9 @@ const sendMessage = (event) => {
     event.preventDefault();
     searchBox.removeEventListener('keypress', sendMessage);
     searchBox.readOnly = true;
-    let send_data = "message="+encodeURIComponent(search_query); //this has all been URI-encoded already
+    let send_data = "message="+encodeURIComponent(search_query);
     console.log(send_data);
-    deets_array = new Array();
+    app_state.deets_array = [];
     const httpRequest = (method, url) => {
       const xhttp = new XMLHttpRequest();
       xhttp.open(method, url, true);
@@ -109,7 +114,7 @@ const sendMessage = (event) => {
               
       
               const deets = [thumbnail_src, livestream, runtime, channel_thumbnail_src, video_title, video_byline, channel_name, selected_byline, video_id];
-              deets_array.push(deets);
+              app_state.deets_array.push(deets);
               addResult(deets, count);
               count++;
             
@@ -141,8 +146,9 @@ const addResult = (deets, count) => {
   document.getElementById("results_column").append(results_node);
 
 };
+
 const resizeResults = () => {
-  if(pageno == 1) {
+  if(app_state.pageno == 1) {
     const result_width = getResultWidth();
     const new_result_height = result_width * (7823/9090);
     const result_blocks = document.getElementsByClassName("result_block");
@@ -150,7 +156,7 @@ const resizeResults = () => {
       result_block.style.height = `${new_result_height}px`;
     }
   }
-  else if(pageno == 2) {
+  else if(app_state.pageno == 2) {
     const vp_width = window.visualViewport.width;
     const vp_height = window.visualViewport.height;
     const landscape = vp_width > vp_height ? true : false;
@@ -177,7 +183,11 @@ const resizeResults = () => {
       document.getElementById("selected_thumbnail_img").style.width = `100%`;
       new_thumb_width = document.getElementById("selected_thumbnail_img").getBoundingClientRect().width;
     }
-    document.getElementById("time_pos_overlay").style.width = `${current_seek_percent*new_thumb_width}px`;
+    const overlay = document.getElementById("time_pos_overlay");
+    overlay.style.transitionDuration = "0s";
+    overlay.style.width = `${new_thumb_width*app_state.current_seek_percent*0.01}px`;
+    //overlay.style.transitionDuration = "1s";
+    app_state.thumbnail_width = new_thumb_width;
   }
 
 };
@@ -185,20 +195,20 @@ window.addEventListener('resize', resizeResults);
 
 const highlightVid = (event) => {
   if(event.target.className == "thumbnail_img" || event.target.className == "video_title") {
-    pageno = 2;
+    app_state.pageno = 2;
 
     const selected_result_block_index = Number(event.currentTarget.dataset.count); //event.currentTarget specifies the element the eventListener is attached to, while event.target is the actual (possibly child-) element which the event actually fired on
-    document.getElementById("vid_title_selected").textContent = deets_array[selected_result_block_index][4];
-    document.getElementById("selected_thumbnail_img").src = deets_array[selected_result_block_index][0];
-    document.getElementById("channel_logo_block_selected").querySelector(".channel_img").src = deets_array[selected_result_block_index][3];
-    document.getElementById("vid_byline_selected").innerHTML = deets_array[selected_result_block_index][7];
-    document.getElementById("channel_name_selected").textContent = deets_array[selected_result_block_index][6];
+    document.getElementById("vid_title_selected").textContent = app_state.deets_array[selected_result_block_index][4];
+    document.getElementById("selected_thumbnail_img").src = app_state.deets_array[selected_result_block_index][0];
+    document.getElementById("channel_logo_block_selected").querySelector(".channel_img").src = app_state.deets_array[selected_result_block_index][3];
+    document.getElementById("vid_byline_selected").innerHTML = app_state.deets_array[selected_result_block_index][7];
+    document.getElementById("channel_name_selected").textContent = app_state.deets_array[selected_result_block_index][6];
 
     document.getElementById("main_column").style.display = "none";
     document.getElementById("selected_vid_column").style.display = "flex";
     resizeResults();
 
-    playVid("https://youtube.com/watch?v="+deets_array[selected_result_block_index][8], true);
+    playVid("https://youtube.com/watch?v="+app_state.deets_array[selected_result_block_index][8], false);
   }  
 };
 
@@ -289,9 +299,7 @@ const controlMPV = (event) => {
 
 document.querySelectorAll(".playback_btn").forEach(btn => {
   btn.addEventListener('click', controlMPV);
-})
-
-let current_seek_percent = 0;
+});
 
 const seekTime = (event) => {
   if(event.target.parentElement.id != "selected_thumbnail") return;
@@ -303,8 +311,11 @@ const seekTime = (event) => {
   console.log(seek_percent);
   const send_data = "seek_percent="+seek_percent;
   console.log(send_data);
-  current_seek_percent = seek_percent;
-  document.getElementById("time_pos_overlay").style.width = `${current_seek_percent*thumbnail_width}px`;
+  app_state.current_seek_percent = seek_percent*100;
+  const overlay = document.getElementById("time_pos_overlay");
+  //overlay.style.transition = "";
+  document.getElementById("time_pos_overlay").style.width = `${seek_percent*thumbnail_width}px`;
+  //overlay.style.transition = "width 1s linear";
 }
 
 document.getElementById("selected_thumbnail").addEventListener('click', seekTime);
@@ -312,22 +323,25 @@ document.getElementById("selected_thumbnail").addEventListener('click', seekTime
 
 function startProgressBar(vid_length) {
   const overlay = document.getElementById("time_pos_overlay");
-  let current_width_percent = 0;
-  overlay.style.width = `${current_width_percent}%`;
+  
+  //overlay.style.width = `${app_state.current_seek_percent}%`;
+  overlay.style.width = `${app_state.thumbnail_width*app_state.current_seek_percent*0.01}px`;
+
   let seconds_elapsed = 0;
 
   const moveProgressBar = () => {
 
-    current_width_percent+=(100/vid_length);
+    app_state.current_seek_percent+=(100/vid_length);
     
     let x = 0;
-    overlay.style.width = `${current_width_percent}%`;
-    console.log(`Current percentage is ${current_width_percent}%`);
+    //overlay.style.width = `${app_state.current_seek_percent}%`;
+    overlay.style.width = `${app_state.thumbnail_width*app_state.current_seek_percent*0.01}px`;
+    console.log(`Current percentage is ${app_state.current_seek_percent}%`);
         
     seconds_elapsed++;
     if(seconds_elapsed == vid_length) return;
     setTimeout(moveProgressBar, 1000);
       
-  }
+  };
   moveProgressBar();
 }
