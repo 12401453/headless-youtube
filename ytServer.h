@@ -57,7 +57,7 @@ class ytServer : public TcpListener {
         bool ytSearch(std::string _POST[1], int clientSocket);
         bool ytSearchServerSideParsing(std::string _POST[1], int clientSocket);
 
-        bool playMPV(std::string _POST[2], int clientSocket);
+        bool playMPV_execvp(std::string _POST[2], int clientSocket);
         bool playMPV_stdSystem(std::string _POST[2], int clientSocket);
 
         void startMPV(const std::string& command);

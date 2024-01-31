@@ -734,7 +734,8 @@ bool ytServer::ytSearchServerSideParsing(std::string _POST[1], int clientSocket)
     return true;
 }
 
-bool ytServer::playMPV(std::string _POST[2], int clientSocket) {
+//not used, test of fork() and execvp()
+bool ytServer::playMPV_execvp(std::string _POST[2], int clientSocket) {
 
     pid_t pid = fork();
 
@@ -895,16 +896,18 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
                 break;
             case 2:
                 control_response = "rewind button pressed";
-                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"LEFT\"] }\n", 100);
+                /*strncpy(mpv_command, "{ \"command\": [\"keypress\", \"LEFT\"] }\n", 100);
                 if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: ");
-                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: "); */
+                runMPVCommand("{ \"command\": [\"keypress\", \"LEFT\"] }\n", rd_buf);
                 //printf("%s\n", rd_buf);
                 break;
             case 3:
                 control_response = "fast-forward button pressed";
-                strncpy(mpv_command, "{ \"command\": [\"keypress\", \"RIGHT\"] }\n", 100);
+                /*strncpy(mpv_command, "{ \"command\": [\"keypress\", \"RIGHT\"] }\n", 100);
                 if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: ");
-                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+                if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: "); */
+                runMPVCommand("{ \"command\": [\"keypress\", \"RIGHT\"] }\n", rd_buf);
                 //printf("%s\n", rd_buf);
                 break;
         }

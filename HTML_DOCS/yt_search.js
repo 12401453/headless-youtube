@@ -321,26 +321,25 @@ const seekTime = (event) => {
 document.getElementById("selected_thumbnail").addEventListener('click', seekTime);
 
 
-function startProgressBar(vid_length) {
+function startProgressBar(vid_length, update_herz) {
   const overlay = document.getElementById("time_pos_overlay");
   
   //overlay.style.width = `${app_state.current_seek_percent}%`;
   overlay.style.width = `${app_state.thumbnail_width*app_state.current_seek_percent*0.01}px`;
 
-  let seconds_elapsed = 0;
-
   const moveProgressBar = () => {
 
-    app_state.current_seek_percent+=(100/vid_length);
+    app_state.current_seek_percent+=(100/(vid_length*update_herz));
     
     let x = 0;
     //overlay.style.width = `${app_state.current_seek_percent}%`;
     overlay.style.width = `${app_state.thumbnail_width*app_state.current_seek_percent*0.01}px`;
-    console.log(`Current percentage is ${app_state.current_seek_percent}%`);
-        
-    seconds_elapsed++;
-    if(seconds_elapsed == vid_length) return;
-    setTimeout(moveProgressBar, 1000);
+    //console.log(`Current percentage is ${app_state.current_seek_percent}%`);
+    if(app_state.current_seek_percent >= 100) {
+      console.log("finished");
+      return;
+    }
+    setTimeout(moveProgressBar, 1000/update_herz);
       
   };
   moveProgressBar();
