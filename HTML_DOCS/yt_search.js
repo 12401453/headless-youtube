@@ -10,7 +10,9 @@ let app_state = {
   current_seek_percent: 0,
   search_query: "",
   mpv_running: false,
-  thumbnail_width: 0
+  thumbnail_width: 0,
+  vid_paused: false,
+  vid_muted: false
 };
 
 //to get around iOS's lack of support for CSS aspect-ratio media-query:
@@ -63,6 +65,7 @@ const sendMessage = (event) => {
           searchBox.select();
           resultsColumn.innerHTML = "";
           const json_results = xhttp.response["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
+          //the above can fail, e.g. with "made you look" as a search term; recheck the JSON (Cannot read properties of undefined (reading 'twoColumnSearchResultsRenderer'))
           const itemSectionRenderer_no = json_results.length - 2;
           const renderers = json_results[itemSectionRenderer_no]["itemSectionRenderer"]["contents"];
           let count = 0;
@@ -197,57 +200,18 @@ const highlightVid = (event) => {
   if(event.target.className == "thumbnail_img" || event.target.className == "video_title") {
     app_state.pageno = 2;
 
+    const mpv_waiting_loader = document.createRange().createContextualFragment("<div id ='mpv_waiting_loader'><div class='loader'></div><div id='mpv_waiting_text'>Loading video...</div></div>");
+
+    document.getElementById("main_column").innerHTML = "";
+    document.getElementById("main_column").appendChild(mpv_waiting_loader);
+
     const selected_result_block_index = Number(event.currentTarget.dataset.count); //event.currentTarget specifies the element the eventListener is attached to, while event.target is the actual (possibly child-) element which the event actually fired on
-    document.getElementById("vid_title_selected").textContent = app_state.deets_array[selected_result_block_index][4];
-    document.getElementById("selected_thumbnail_img").src = app_state.deets_array[selected_result_block_index][0];
-    document.getElementById("channel_logo_block_selected").querySelector(".channel_img").src = app_state.deets_array[selected_result_block_index][3];
-    document.getElementById("vid_byline_selected").innerHTML = app_state.deets_array[selected_result_block_index][7];
-    document.getElementById("channel_name_selected").textContent = app_state.deets_array[selected_result_block_index][6];
-
-    document.getElementById("main_column").style.display = "none";
-    document.getElementById("selected_vid_column").style.display = "flex";
-    resizeResults();
-
-    playVid("https://youtube.com/watch?v="+app_state.deets_array[selected_result_block_index][8], false);
+    playVid(selected_result_block_index, false);
   }  
 };
 
-const changeButtonSize = (event) => {
-  if(event.type == 'mousedown' || event.type == "touchstart") event.target.style.transform = "scale(0.9, 0.9)";
-  else if(event.type == 'mouseout') event.target.style.transform = "";
-  else event.target.style.transform = "";
-};
-document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
-document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
-document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
-document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
-document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseout', changeButtonSize));
-/*
-const fetchTesting = () => {
-  let thumbnail_urls = [];
-  const fetchThumbnails = (thumbnail_src) => {
-    const thumbnailRequest = new Request(thumbnail_src);
-
-    fetch(thumbnailRequest)
-    .then((response) => {
-      if(!response.ok) {
-        throw new Error(`HTTP error status ${response.status} on fetching thumbnail`);
-      }
-      return response.blob();
-    })
-    .then((response) => {
-      thumbnail_urls.push(URL.createObjectURL(response));
-    })
-    .catch(error => {
-      console.log(error);
-      thumbnail_urls.push(not_found_thumbnail_URL);
-    })
-  };
-  return thumbnail_urls;
-}; */
-
-
-const playVid = (vid_url, audio_only) => {
+const playVid = (selected_result_block_index, audio_only) => {
+  const vid_url = "https://youtube.com/watch?v="+app_state.deets_array[selected_result_block_index][8];
   const httpRequest = (method, url) => {
     const xhttp = new XMLHttpRequest();
     let send_data = "vid_url="+encodeURIComponent(vid_url)+"&audio_only="+Number(audio_only); 
@@ -258,6 +222,12 @@ const playVid = (vid_url, audio_only) => {
     xhttp.onreadystatechange = () => { 
       if (xhttp.readyState == 4) {
         console.log(xhttp.response);
+        if(xhttp.response == "a video is already playing") {
+          displayCurrentVid(selected_result_block_index);
+          return;
+        }
+        listenForPlaybackStart(selected_result_block_index);
+        
       }
     }; 
     xhttp.send(send_data);
@@ -265,16 +235,72 @@ const playVid = (vid_url, audio_only) => {
   httpRequest("POST", "play_vid.php");  
 };
 
+const displayCurrentVid = (selected_result_block_index) => {
+  document.getElementById("vid_title_selected").textContent = app_state.deets_array[selected_result_block_index][4];
+  document.getElementById("selected_thumbnail_img").src = app_state.deets_array[selected_result_block_index][0];
+  document.getElementById("channel_logo_block_selected").querySelector(".channel_img").src = app_state.deets_array[selected_result_block_index][3];
+  document.getElementById("vid_byline_selected").innerHTML = app_state.deets_array[selected_result_block_index][7];
+  document.getElementById("channel_name_selected").textContent = app_state.deets_array[selected_result_block_index][6];
+
+  document.getElementById("main_column").style.display = "none";
+  document.getElementById("selected_vid_column").style.display = "flex";
+  resizeResults();
+};
+
+const listenForPlaybackStart = (selected_result_block_index) => {
+  const httpRequest = (method, url) => {
+    const xhttp = new XMLHttpRequest();
+    let send_data = "dummy_post="+encodeURIComponent("posty");
+
+    xhttp.open(method, url, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.responseType = 'text';
+    xhttp.onreadystatechange = () => { 
+      if (xhttp.readyState == 4) {
+        console.log(xhttp.response);
+        displayCurrentVid(selected_result_block_index);
+      }
+    }; 
+    xhttp.send(send_data);
+  };
+  httpRequest("POST", "listen_start.php");  
+};
+
+
+
+
+const changeButtonSize = (event) => {
+  if(event.type == 'mousedown' || event.type == "touchstart") event.currentTarget.style.transform = "scale(0.9, 0.9)";
+  else if(event.type == 'mouseout') event.currentTarget.style.transform = "";
+  else event.currentTarget.style.transform = "";
+};
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
+document.querySelectorAll(".playback_btn").forEach(btn => btn.addEventListener('mouseout', changeButtonSize));
+
+document.querySelectorAll(".bottom_btn").forEach(btn => btn.addEventListener('touchstart', changeButtonSize));
+document.querySelectorAll(".bottom_btn").forEach(btn => btn.addEventListener('touchend', changeButtonSize));
+document.querySelectorAll(".bottom_btn").forEach(btn => btn.addEventListener('mousedown', changeButtonSize));
+document.querySelectorAll(".bottom_btn").forEach(btn => btn.addEventListener('mouseup', changeButtonSize));
+document.querySelectorAll(".bottom_btn").forEach(btn => btn.addEventListener('mouseout', changeButtonSize));
+
 const pause_play_urls = ["playback_icons/play.svg", "playback_icons/pause.svg"]
 let play_btn_switch_count = 1;
+let mute_switch_count = 1;
+const mute_unmute_urls = ["playback_icons/volume-mute.svg", "playback_icons/volume-high.svg"];
 
 const controlMPV = (event) => {
-  if(event.target.className != "playback_btn") return;
+  if(event.target.className != "playback_btn" && event.currentTarget.className != "bottom_btn") return;
 
   let control_code = 0;
   if(event.target.id == "pause_btn") control_code = 1;
   else if(event.target.id == "rw_btn") control_code = 2;
   else if(event.target.id == "ff_btn") control_code = 3;
+  else if(event.currentTarget.id == "quit_btn") control_code = 4;
+  else if(event.currentTarget.id == "volume_btn") control_code = 5;
+  else if(event.currentTarget.id == "subtitles_btn") control_code = 6;
 
   const httpRequest = (method, url) => {
     const xhttp = new XMLHttpRequest();
@@ -286,9 +312,18 @@ const controlMPV = (event) => {
     xhttp.onreadystatechange = () => { 
       if (xhttp.readyState == 4) {
         console.log(xhttp.response);
+        //replace this shit with just sending the state-struct back from the server and reading the state
         if(xhttp.response.trim() == "pause button pressed") {
           play_btn_switch_count++;
           event.target.src = pause_play_urls[play_btn_switch_count % 2];
+        }
+        else if(xhttp.response.trim() == "volume button pressed") {
+          mute_switch_count++;
+          console.log(event.currentTarget);
+          document.getElementById("volume_icon").src = mute_unmute_urls[mute_switch_count % 2];
+        }
+        else if(xhttp.response.trim() == "quit button pressed") {
+          location.reload();
         }
       }
     }; 
@@ -298,6 +333,9 @@ const controlMPV = (event) => {
 };
 
 document.querySelectorAll(".playback_btn").forEach(btn => {
+  btn.addEventListener('click', controlMPV);
+});
+document.querySelectorAll(".bottom_btn").forEach(btn => {
   btn.addEventListener('click', controlMPV);
 });
 
@@ -344,3 +382,46 @@ function startProgressBar(vid_length, update_herz) {
   };
   moveProgressBar();
 }
+
+
+const getCurrentTimePos = () => {
+  const httpRequest = (method, url) => {
+    const xhttp = new XMLHttpRequest();
+    let send_data = "dummy_post="+encodeURIComponent("posty");
+
+    xhttp.open(method, url, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.responseType = 'text';
+    xhttp.onreadystatechange = () => { 
+      if (xhttp.readyState == 4) {
+        console.log(xhttp.response);
+      }
+    }; 
+    xhttp.send(send_data);
+  };
+  httpRequest("POST", "get_current_time.php");  
+};
+
+/*
+const fetchTesting = () => {
+  let thumbnail_urls = [];
+  const fetchThumbnails = (thumbnail_src) => {
+    const thumbnailRequest = new Request(thumbnail_src);
+
+    fetch(thumbnailRequest)
+    .then((response) => {
+      if(!response.ok) {
+        throw new Error(`HTTP error status ${response.status} on fetching thumbnail`);
+      }
+      return response.blob();
+    })
+    .then((response) => {
+      thumbnail_urls.push(URL.createObjectURL(response));
+    })
+    .catch(error => {
+      console.log(error);
+      thumbnail_urls.push(not_found_thumbnail_URL);
+    })
+  };
+  return thumbnail_urls;
+}; */

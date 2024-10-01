@@ -6,6 +6,7 @@
 struct app_state {
     bool mpv_running;
     bool paused;
+    bool muted;
     short int pageno;
     double seek_percentage;
     std::string search_query;
@@ -20,6 +21,7 @@ class ytServer : public TcpListener {
             memset(&m_app_state, '\0', sizeof(app_state));
             m_app_state.mpv_running = false;
             m_app_state.paused = false;
+            m_app_state.muted = false;
             m_app_state.pageno = 1;
             m_app_state.seek_percentage = 0.0;        
         }
@@ -65,6 +67,7 @@ class ytServer : public TcpListener {
         bool unsafeURL(const std::string& arg);
 
         bool getCurrentTimePos(std::string _POST[1], int clientSocket);
+        bool listenForPlaybackStart(std::string _POST[1], int clientSocket);
 
         void runMPVCommand(const char* command, char* response_buf);
 

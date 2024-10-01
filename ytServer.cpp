@@ -547,6 +547,13 @@ void ytServer::handlePOSTedData(const char* post_data, int clientSocket) {
     else if(!strcmp(m_url, "/control_mpv.php")) {
         bool php_func_success = controlMPV(post_values, clientSocket);
     }
+    else if(!strcmp(m_url, "/get_current_time.php")) {
+        bool php_func_success = getCurrentTimePos(post_values, clientSocket);
+    }
+    else if(!strcmp(m_url, "/listen_start.php")) {
+        bool php_func_success = listenForPlaybackStart(post_values, clientSocket);
+    }
+    
 
     std::cout << "m_url: " << m_url << std::endl;
     
@@ -575,6 +582,8 @@ int ytServer::getPostFields(const char* url) {
     else if(!strcmp(url, "/curl_lookup.php")) return 1;
     else if(!strcmp(url, "/play_vid.php")) return 2;
     else if(!strcmp(url, "/control_mpv.php")) return 1;
+    else if(!strcmp(url, "/get_current_time.php")) return 1;
+    else if(!strcmp(url, "/listen_start.php")) return 1;
     else return -1;
 }
 
@@ -817,7 +826,7 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
     std::thread playbackThread(&ytServer::startMPV, this, command);
     
 
-    std::string playback_response = "playback started";
+    std::string playback_response = "mpv command has been executed";
 
     std::ostringstream post_response;
     int content_length = playback_response.size();
@@ -890,6 +899,8 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
                 //if(send(m_client_socket, mpv_command, strlen(mpv_command), 0) == -1) perror("send() error: "); 
                 //if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
                 runMPVCommand("{ \"command\": [\"keypress\", \"SPACE\"] }\n", rd_buf);
+                if(m_app_state.paused) m_app_state.paused = false;
+                else m_app_state.paused = true;
                 memset(rd_buf, '\0', 128);
                 runMPVCommand("{ \"command\": [\"get_property\", \"time-pos\"] }\n", rd_buf);
                 printf("%s\n", rd_buf);
@@ -910,6 +921,21 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
                 runMPVCommand("{ \"command\": [\"keypress\", \"RIGHT\"] }\n", rd_buf);
                 //printf("%s\n", rd_buf);
                 break;
+            case 4:
+                control_response = "quit button pressed";
+                runMPVCommand("{\"command\": [\"keypress\", \"q\"] }\n", rd_buf);
+                //m_app_state.mpv_running = false;
+                break;
+            case 5:
+                control_response = "volume button pressed";
+                runMPVCommand("{\"command\": [\"keypress\", \"m\"] }\n", rd_buf);
+                if(m_app_state.muted) m_app_state.muted = false;
+                else m_app_state.muted = true;
+                break;
+            case 6:
+                control_response = "subs button pressed";
+                runMPVCommand("{\"command\": [\"keypress\", \"j\"] }\n", rd_buf);
+                break;
         }
 
     std::ostringstream post_response;
@@ -923,6 +949,22 @@ bool ytServer::controlMPV(std::string _POST[1], int clientSocket) {
 }
 
 bool ytServer::getCurrentTimePos(std::string _POST[1], int clientSocket) {
+
+    if(m_app_state.mpv_running == false) {
+
+        std::string current_time_json = "no vid is running";
+        std::cout << current_time_json << "\n";
+
+        std::ostringstream post_response;
+        int content_length = current_time_json.size();
+        post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << current_time_json;
+        int length = post_response.str().size() + 1;
+
+        sendToClient(clientSocket, post_response.str().c_str(), length);
+
+        return false;
+    }
+
     char mpv_command[100];
     char rd_buf[128];
     memset(rd_buf, '\0', 128);
@@ -937,7 +979,68 @@ bool ytServer::getCurrentTimePos(std::string _POST[1], int clientSocket) {
     if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
 
     std::string current_time_json(rd_buf);
-    //unfinished
+    std::cout << current_time_json << "\n";
+
+    std::ostringstream post_response;
+    int content_length = current_time_json.size();
+    post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << current_time_json;
+    int length = post_response.str().size() + 1;
+
+    sendToClient(clientSocket, post_response.str().c_str(), length);
+
+    return true;
+}
+
+bool ytServer::listenForPlaybackStart(std::string _POST[1], int clientSocket) {
+
+    if(m_app_state.mpv_running == false) {
+
+        std::string response_text = "no vid is running";
+        std::cout << response_text << "\n";
+
+        std::ostringstream post_response;
+        int content_length = response_text.size();
+        post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << response_text;
+        int length = post_response.str().size() + 1;
+
+        sendToClient(clientSocket, post_response.str().c_str(), length);
+
+        return false;
+    }
+
+    std::cout << "Entered listenForPlaybackStart() function, sleeping...\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::cout << "Now we can try connecting to the ipc-server socket\n";
+
+    char mpv_command[100];
+    char rd_buf[128];
+    memset(rd_buf, '\0', 128);
+    memset(mpv_command, '\0', 100); 
+
+    m_client_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) == -1) perror("connect() error: ");
+    
+    //the ipc-socket seems to get certain events written to it by default, one of which is the "file-loaded" event which fires when playback starts, so what we do here is call recv() on the socket, which blocks until there is something to read off it, continuously until what we read is the file-loaded event message
+    //sometimes however there is two events on the socket for some reason so we use string.find() rather than strcmp();
+    std::string text_on_ipc_socket = "";
+    while(text_on_ipc_socket.find("{\"event\":\"file-loaded\"}\n") == -1) {
+        memset(rd_buf, '\0', 128);
+        if(recv(m_client_socket, rd_buf, 128, 0) == -1) perror("recv() error: ");
+        text_on_ipc_socket = std::string(rd_buf);
+        std::cout << "------------------------------------------\n" << text_on_ipc_socket << "------------------------------------------\n";
+        //if(!strncmp(rd_buf, "{\"event\":\"file-loaded\"}\n", 25)) break;
+    }
+    
+
+    if(close(m_client_socket) == -1) perror("close() error: ");
+    std::ostringstream post_response;
+    std::string response_text = "mpv has started playback";
+    int content_length = response_text.size();
+    post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << response_text;
+    int length = post_response.str().size() + 1;
+
+    sendToClient(clientSocket, post_response.str().c_str(), length);
 
     return true;
 }

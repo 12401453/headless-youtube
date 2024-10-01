@@ -40,7 +40,10 @@
     <div id="playback_controls">
       <div class="button left"><img id="rw_btn" draggable="false" class="playback_btn" src="playback_icons/rewind.svg"></div><div class="button"><img id="pause_btn" draggable="false" class="playback_btn" src="playback_icons/pause.svg"></div><div class="button right"><img id="ff_btn" draggable="false" class="playback_btn" src="playback_icons/fastforward.svg"></div>
     </div>
-    <div class="video_options">
+    <div class="bottom_options">
+      <div class="bottom_btn" id="subtitles_btn"><img draggable="false" class="bottom_icon" src="playback_icons/subtitles.svg"><div class="bottom_btn_text">subtitles</div></div>
+      <div class="bottom_btn" id="volume_btn"><img id="volume_icon" draggable="false" class="bottom_icon" src="playback_icons/volume-high.svg"><div class="bottom_btn_text">volume</div></div>
+      <div class="bottom_btn" id="quit_btn"><img draggable="false" class="bottom_icon" src="playback_icons/stop.svg"><div class="bottom_btn_text">Quit video</div></div>
     </div>
   </div>
 </div>
