@@ -553,6 +553,9 @@ void ytServer::handlePOSTedData(const char* post_data, int clientSocket) {
     else if(!strcmp(m_url, "/listen_start.php")) {
         bool php_func_success = listenForPlaybackStart(post_values, clientSocket);
     }
+    else if(!strcmp(m_url, "/shutdown_device.php")) {
+        bool php_func_success = shutdownDevice(post_values, clientSocket);
+    }
     
 
     std::cout << "m_url: " << m_url << std::endl;
@@ -584,6 +587,7 @@ int ytServer::getPostFields(const char* url) {
     else if(!strcmp(url, "/control_mpv.php")) return 1;
     else if(!strcmp(url, "/get_current_time.php")) return 1;
     else if(!strcmp(url, "/listen_start.php")) return 1;
+    else if(!strcmp(url, "/shutdown_device.php")) return 1;
     else return -1;
 }
 
@@ -1019,7 +1023,14 @@ bool ytServer::listenForPlaybackStart(std::string _POST[1], int clientSocket) {
 
     m_client_socket = socket(AF_UNIX, SOCK_STREAM, 0);
 
-    if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) == -1) perror("connect() error: ");
+    if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) == -1) {
+	perror("listenForPlaybackStart() connect() error: ");
+        while(1) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if(connect(m_client_socket, (sockaddr*)&m_unix_sock_address, sizeof(m_unix_sock_address)) != -1) break; 
+            else perror("still a connect() error: ");
+        }
+    }
     
     //the ipc-socket seems to get certain events written to it by default, one of which is the "file-loaded" event which fires when playback starts, so what we do here is call recv() on the socket, which blocks until there is something to read off it, continuously until what we read is the file-loaded event message
     //sometimes however there is two events on the socket for some reason so we use string.find() rather than strcmp();
@@ -1050,4 +1061,40 @@ void ytServer::runMPVCommand(const char* command, char* response_buf) {
     if(send(m_client_socket, command, strlen(command), 0) == -1) perror("send() error: "); //if you include the null-byte in the command then mpv thinks the message is too long since it only reads up to the '\n', and thus it thinks the command has one extra superfluous byte in it which triggers the "ignoring unterminated command" message
     if(recv(m_client_socket, response_buf, 128, 0) == -1) perror("recv() error: "); //if I don't receive what mpv writes back to me then it thinks there is an error when I close the socket; it doesn't actually affect anything and tbh I think calling recv() unnecessarily is bloat
 
+}
+
+bool ytServer::shutdownDevice(std::string _POST[1], int clientSocket) {
+
+    std::string code = URIDecode(_POST[0]);
+
+    if(code == "shut down right this instant") {
+        if(!std::system("systemctl poweroff")) {
+            std::ostringstream post_response;
+            std::string response_text = "youtube server is shutting down";
+            int content_length = response_text.size();
+            post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << response_text;
+            int length = post_response.str().size() + 1;
+            sendToClient(clientSocket, post_response.str().c_str(), length);
+            return true;
+        }
+        else {
+            std::ostringstream post_response;
+            std::string response_text = "poweroff command didn't work";
+            int content_length = response_text.size();
+            post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << response_text;
+            int length = post_response.str().size() + 1;
+            sendToClient(clientSocket, post_response.str().c_str(), length);
+            return false;
+        }
+    }
+    else {
+        std::cout << "shutdown code is wrong\n";
+        std::string response_text = "shutdown code is wrong";
+        std::ostringstream post_response;
+        int content_length = response_text.size();
+        post_response << "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " << content_length << "\r\n\r\n" << response_text;
+        int length = post_response.str().size() + 1;
+        sendToClient(clientSocket, post_response.str().c_str(), length);
+        return false;
+    }
 }

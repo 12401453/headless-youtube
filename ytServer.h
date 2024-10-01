@@ -69,6 +69,8 @@ class ytServer : public TcpListener {
         bool getCurrentTimePos(std::string _POST[1], int clientSocket);
         bool listenForPlaybackStart(std::string _POST[1], int clientSocket);
 
+        bool shutdownDevice(std::string _POST[1], int clientSocket);
+
         void runMPVCommand(const char* command, char* response_buf);
 
         const char*         m_post_data;

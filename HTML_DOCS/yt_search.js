@@ -402,6 +402,24 @@ const getCurrentTimePos = () => {
   httpRequest("POST", "get_current_time.php");  
 };
 
+const shutdownDevice = () => {
+  const httpRequest = (method, url) => {
+    const xhttp = new XMLHttpRequest();
+    let send_data = "shutdown_code="+encodeURIComponent("shut down right this instant");
+
+    xhttp.open(method, url, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.responseType = 'text';
+    xhttp.onreadystatechange = () => { 
+      if (xhttp.readyState == 4) {
+        console.log(xhttp.response);
+      }
+    }; 
+    xhttp.send(send_data);
+  };
+  httpRequest("POST", "shutdown_device.php");  
+};
+
 /*
 const fetchTesting = () => {
   let thumbnail_urls = [];
