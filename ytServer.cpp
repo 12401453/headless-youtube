@@ -818,7 +818,7 @@ bool ytServer::playMPV_stdSystem(std::string _POST[2], int clientSocket) {
 
     std::string format_arg;
     if(_POST[1] == "0") {
-        format_arg = "--ytdl-format=\'(bestvideo[vcodec!^=av])[height<=1440]+bestaudio\' --fullscreen";
+        format_arg = "--ytdl-format=\'(bestvideo[vcodec!^=av1])[height<=1440]+bestaudio\' --fullscreen --hwdec=auto --profile=high-quality";
     }
     else {
         format_arg = "--ytdl-format=ba";
